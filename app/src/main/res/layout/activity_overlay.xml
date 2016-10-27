@@ -1,0 +1,135 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:orientation="vertical"
+    android:paddingBottom="@dimen/map_vertical_margin"
+    android:paddingLeft="@dimen/map_horizontal_margin"
+    android:paddingRight="@dimen/map_horizontal_margin"
+    android:paddingTop="@dimen/map_vertical_margin"
+    app:layout_behavior="@string/appbar_scrolling_view_behavior"
+    tools:context="se.simonekdahl.mymaps.GroundOverlayActivity"
+    >
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        >
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_above="@+id/relativeLayout"
+            android:id="@+id/Mapview">
+                <fragment
+                    android:id="@+id/map"
+                    android:name="com.google.android.gms.maps.SupportMapFragment"
+                    android:layout_width="match_parent"
+                    android:layout_height="fill_parent"
+                     />
+
+                    <RelativeLayout
+                        android:id="@+id/imageview_relative"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_centerInParent="true"
+                        >
+                            <ImageView
+                        android:layout_width="fill_parent"
+                        android:layout_height="fill_parent"
+                        android:id="@+id/imageMapView"
+                        android:layout_centerInParent="true" />
+                    </RelativeLayout>
+
+        </RelativeLayout>
+
+        <RelativeLayout
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:background="@color/white"
+            android:id="@+id/relativeLayout"
+            android:layout_alignParentBottom="true"
+            android:layout_alignParentLeft="true"
+            android:layout_alignParentStart="true">
+
+            <TextView
+                android:layout_marginTop="16dp"
+                android:id="@+id/transparency_text"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/transparency" />
+
+            <SeekBar
+                android:layout_marginTop="16dp"
+                android:id="@+id/transparencySeekBar"
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:layout_toRightOf="@+id/transparency_text"
+                android:layout_toLeftOf="@+id/saveImage_btn"
+                android:layout_toStartOf="@+id/saveImage_btn" />
+
+            <TextView
+                android:layout_marginTop="16dp"
+                android:id="@+id/rotation_text"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/rotation"
+
+                android:layout_below="@+id/transparency_text"
+                android:layout_alignLeft="@+id/transparency_text"
+                android:layout_toLeftOf="@+id/transparencySeekBar"
+                android:layout_toStartOf="@+id/transparencySeekBar" />
+
+            <SeekBar
+                android:id="@+id/rotaionSeekBar"
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:layout_alignBottom="@+id/rotation_text"
+                android:layout_toRightOf="@+id/rotation_text"
+                android:layout_toLeftOf="@+id/saveImage_btn"
+                android:layout_toStartOf="@+id/saveImage_btn" />
+
+            <TextView
+                android:layout_marginTop="16dp"
+                android:id="@+id/size_text"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/size"
+
+                android:layout_below="@+id/rotation_text"
+                android:layout_alignLeft="@+id/rotation_text"
+                android:layout_toLeftOf="@+id/rotaionSeekBar"
+                android:layout_toStartOf="@+id/rotaionSeekBar"
+                 />
+
+            <SeekBar
+                android:id="@+id/sizeSeekBar"
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:layout_alignBottom="@+id/size_text"
+                android:layout_toRightOf="@+id/rotation_text"
+                android:layout_toLeftOf="@+id/saveImage_btn"
+                android:layout_toStartOf="@+id/saveImage_btn" />
+
+            <Button
+                style="?android:attr/buttonStyleSmall"
+                xmlns:android="http://schemas.android.com/apk/res/android"
+                android:id="@+id/saveImage_btn"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/place_image"
+                android:layout_alignTop="@+id/transparencySeekBar"
+                android:layout_alignParentRight="true"
+                android:layout_alignParentEnd="true" />
+
+
+        </RelativeLayout>
+
+    </RelativeLayout>
+
+
+</LinearLayout>
