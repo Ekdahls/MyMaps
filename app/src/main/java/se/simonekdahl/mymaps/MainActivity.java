@@ -423,6 +423,9 @@ public class MainActivity extends ParentActivity
                         Toast.LENGTH_LONG).show();
             }
         }
+
+        loadGroundOverlayData();
+
     }
 
     private void loadGroundOverlayData(){
