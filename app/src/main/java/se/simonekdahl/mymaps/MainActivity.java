@@ -37,6 +37,7 @@ import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.maps.CameraUpdate;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
+import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.GroundOverlayOptions;
@@ -46,7 +47,7 @@ import java.io.IOException;
 import java.util.List;
 
 public class MainActivity extends ParentActivity
-        implements NavigationView.OnNavigationItemSelectedListener {
+        implements NavigationView.OnNavigationItemSelectedListener, OnMapReadyCallback {
 
     private static final int ERROR_DIALOG_REQUEST = 9001;
     private static final int GPS_ENABLE_REQUEST = 9002;
@@ -63,10 +64,13 @@ public class MainActivity extends ParentActivity
 
     //Googles api client
     private GoogleApiClient client;
+    private Bundle savedInstanceState;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        this.savedInstanceState = savedInstanceState;
 
         locationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
 
@@ -113,64 +117,11 @@ public class MainActivity extends ParentActivity
                 assert navigationView != null;
                 navigationView.setNavigationItemSelectedListener(this);
 
-                if (initMap()) {
 
-                    enableGPS();
-
-                    Toast.makeText(this, R.string.ready_to_map, Toast.LENGTH_SHORT).show();
-
-                    if (getIntent().getDoubleExtra("MAP_LATITUDE", 0) > 0 && getIntent().getDoubleExtra("MAP_LONGITUDE", 0) > 0) {
-
-                        gotoLocation(getIntent().getDoubleExtra("MAP_LATITUDE", 0), getIntent().getDoubleExtra("MAP_LONGITUDE", 0), 12);
-                        //Reset the intent
-                        getIntent().putExtra("MAP_LATITUDE", 0);
-                        getIntent().putExtra("MAP_LONGITUDE", 0);
-
-
-                        //If the app is opened for the first time the instacestate is null.
-                        //Move the camera to users position, fairly zoomed out.
-                    } else if (savedInstanceState == null) {
-
-                        // Get LocationManager object from System Service LOCATION_SERVICE
-                        LocationManager locationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
-
-                        // Create a criteria object to retrieve provider
-                        Criteria criteria = new Criteria();
-
-                        // Get the name of the best provider
-                        String provider = locationManager.getBestProvider(criteria, true);
-
-                        // Get Current Location
-                        //Needs to have this check
-                        if (ActivityCompat.checkSelfPermission(this,
-                                Manifest.permission.ACCESS_FINE_LOCATION)
-                                != PackageManager.PERMISSION_GRANTED) {
-
-
-                            ActivityCompat.requestPermissions(this, new String[]
-                                            {Manifest.permission.ACCESS_FINE_LOCATION},
-                                    PERMISSION_ACCESS_FINE_LOCATION);
-                        }
-
-                        if (locationManager.getLastKnownLocation(provider) != null) {
-                            Location myLocation = locationManager.getLastKnownLocation(provider);
-
-                            // Get latitude of the current location
-                            double latitude = myLocation.getLatitude();
-
-                            // Get longitude of the current location
-                            double longitude = myLocation.getLongitude();
-
-                            gotoLocation(latitude, longitude, 7);
-                        }
-                    }
-
-                    handler = new DBHandler(this);
-                    //Load all groundoverlays to map.
-                    loadGroundOverlayData();
-
-                } else {
-                    Toast.makeText(this, R.string.Map_not_connected, Toast.LENGTH_SHORT).show();
+                if (mMap == null) {
+                    SupportMapFragment mapFragment =
+                            (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map);
+                    mapFragment.getMapAsync(this);
                 }
 
             } else {
@@ -305,18 +256,6 @@ public class MainActivity extends ParentActivity
         return false;
     }
 
-
-    //Funtion to initiate a googlemapfragment to the app
-    private boolean initMap() {
-        if (mMap == null) {
-            SupportMapFragment mapFragment =
-                    (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map);
-            mMap = mapFragment.getMap();
-        }
-        return (mMap != null);
-    }
-
-
     //Function to go (move camera) to a certain location on the map.
     private void gotoLocation(double lat, double lng, float zoom) {
         LatLng latLng = new LatLng(lat, lng);
@@ -371,7 +310,7 @@ public class MainActivity extends ParentActivity
         super.onResume();
 
         Log.d(TAG, "onResume: load groundoverlaydata ");
-        loadGroundOverlayData();
+        //loadGroundOverlayData();
     }
 
     @Override
@@ -380,7 +319,7 @@ public class MainActivity extends ParentActivity
 
         if(client!=null) {
             client.connect();
-            loadGroundOverlayData();
+            //loadGroundOverlayData();
         }
     }
 
@@ -488,6 +427,10 @@ public class MainActivity extends ParentActivity
 
     private void loadGroundOverlayData(){
 
+        if(handler == null){
+            handler = new DBHandler(this);
+        }
+
         mapObjects = handler.readAllMaps();
 
         //clear the map from old overlays.
@@ -520,5 +463,68 @@ public class MainActivity extends ParentActivity
             }
         }
         handler.close();
+    }
+
+    @Override
+    public void onMapReady(GoogleMap googleMap) {
+
+
+        mMap = googleMap;
+
+        enableGPS();
+
+        Toast.makeText(this, R.string.ready_to_map, Toast.LENGTH_SHORT).show();
+
+        if (getIntent().getDoubleExtra("MAP_LATITUDE", 0) > 0 && getIntent().getDoubleExtra("MAP_LONGITUDE", 0) > 0) {
+
+            gotoLocation(getIntent().getDoubleExtra("MAP_LATITUDE", 0), getIntent().getDoubleExtra("MAP_LONGITUDE", 0), 12);
+            //Reset the intent
+            getIntent().putExtra("MAP_LATITUDE", 0);
+            getIntent().putExtra("MAP_LONGITUDE", 0);
+
+
+            //If the app is opened for the first time the instacestate is null.
+            //Move the camera to users position, fairly zoomed out.
+        } else if (savedInstanceState == null) {
+
+            // Get LocationManager object from System Service LOCATION_SERVICE
+            LocationManager locationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
+
+            // Create a criteria object to retrieve provider
+            Criteria criteria = new Criteria();
+
+            // Get the name of the best provider
+            String provider = locationManager.getBestProvider(criteria, true);
+
+            // Get Current Location
+            //Needs to have this check
+            if (ActivityCompat.checkSelfPermission(this,
+                    Manifest.permission.ACCESS_FINE_LOCATION)
+                    != PackageManager.PERMISSION_GRANTED) {
+
+
+                ActivityCompat.requestPermissions(this, new String[]
+                                {Manifest.permission.ACCESS_FINE_LOCATION},
+                        PERMISSION_ACCESS_FINE_LOCATION);
+            }
+
+            if (locationManager.getLastKnownLocation(provider) != null) {
+                Location myLocation = locationManager.getLastKnownLocation(provider);
+
+                // Get latitude of the current location
+                double latitude = myLocation.getLatitude();
+
+                // Get longitude of the current location
+                double longitude = myLocation.getLongitude();
+
+                gotoLocation(latitude, longitude, 7);
+            }
+        }
+
+        handler = new DBHandler(this);
+        //Load all groundoverlays to map.
+        loadGroundOverlayData();
+
+
     }
 }

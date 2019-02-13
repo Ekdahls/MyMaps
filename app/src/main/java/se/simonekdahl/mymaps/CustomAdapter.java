@@ -16,7 +16,7 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.util.List;
 
-import static com.google.android.gms.internal.zzir.runOnUiThread;
+
 
 /**
  * Created by Simon on 16-03-23.

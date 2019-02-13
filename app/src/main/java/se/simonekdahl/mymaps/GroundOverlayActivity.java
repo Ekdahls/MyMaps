@@ -132,22 +132,21 @@ public class GroundOverlayActivity extends ParentActivity
         });
 
         //if map is loaded correct , enable GPS location manager
-        if (initMap()) {
-            enableGPS();
-        }
+        SupportMapFragment mapFragment =
+                (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map);
+        mapFragment.getMapAsync(this);
 
-        //If user has come from other acticity, set camera to that location
-        if(getIntent().getDoubleExtra("CURRENT_LATITUDE", 0) > 0 && getIntent().getDoubleExtra("CURRENT_LONGITUDE", 0) > 0) {
-            gotoLocation(getIntent().getDoubleExtra("CURRENT_LATITUDE", 0),
-                    getIntent().getDoubleExtra("CURRENT_LONGITUDE", 0),
-                    getIntent().getFloatExtra("CURRENT_ZOOM", 0));
-        }
+
 
         Toast.makeText(this, R.string.Toast_groundoverlayactivity_place_image_1of2, Toast.LENGTH_SHORT).show();
     }
 
     @Override
     public void onMapReady(GoogleMap map) {
+
+        mMap = map;
+
+        enableGPS();
 
         // Register a listener to respond to clicks on GroundOverlays.
         Log.d(TAG, "Current lat = : " + getIntent().getDoubleExtra("CURRENT_LATITUDE", 0));
@@ -156,6 +155,13 @@ public class GroundOverlayActivity extends ParentActivity
         mTransparencyBar.setOnSeekBarChangeListener(this);
         mRotationBar.setOnSeekBarChangeListener(this);
         mSizeBar.setOnSeekBarChangeListener(this);
+
+        //If user has come from other acticity, set camera to that location
+        if(getIntent().getDoubleExtra("CURRENT_LATITUDE", 0) > 0 && getIntent().getDoubleExtra("CURRENT_LONGITUDE", 0) > 0) {
+            gotoLocation(getIntent().getDoubleExtra("CURRENT_LATITUDE", 0),
+                    getIntent().getDoubleExtra("CURRENT_LONGITUDE", 0),
+                    getIntent().getFloatExtra("CURRENT_ZOOM", 0));
+        }
     }
 
     @Override
@@ -391,13 +397,5 @@ public class GroundOverlayActivity extends ParentActivity
 
     }
 
-    private boolean initMap() {
-        if (mMap == null) {
-            SupportMapFragment mapFragment =
-                    (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map);
-            mMap = mapFragment.getMap();
-        }
-        return (mMap != null);
-    }
 
 }
