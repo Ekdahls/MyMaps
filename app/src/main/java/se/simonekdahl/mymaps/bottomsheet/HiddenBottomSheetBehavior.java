@@ -1,14 +1,16 @@
 package se.simonekdahl.mymaps.bottomsheet;
 
 import android.content.Context;
-import android.support.design.widget.CoordinatorLayout;
+import androidx.coordinatorlayout.widget.CoordinatorLayout;
 import android.util.AttributeSet;
 import android.view.View;
+
+import com.google.android.material.bottomsheet.BottomSheetBehavior;
 
 /**
  * Created by mcp on 15/03/16.
  */
-public class HiddenBottomSheetBehavior<V extends View> extends android.support.design.widget.BottomSheetBehavior<V> {
+public class HiddenBottomSheetBehavior<V extends View> extends BottomSheetBehavior<V> {
 
     public HiddenBottomSheetBehavior(Context context, AttributeSet attrs) {
         super(context, attrs);

@@ -5,12 +5,11 @@ package se.simonekdahl.mymaps;
  * Database handler class
  */
 
+import android.content.ContentValues;
+import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
-import android.content.Context;
-import android.content.ContentValues;
-import android.graphics.Bitmap;
 import android.util.Log;
 
 import java.io.File;
@@ -77,7 +76,7 @@ public class DBHandler extends SQLiteOpenHelper {
 
     //Add a new row to the database
     //imagefilename is the name of the bitmap refering to the _id of the sqlite object with mapname
-    public long addMap(MapObject mapObject) {
+    public long addMap(MapObject1 mapObject) {
 
         ContentValues values = new ContentValues();
         values.put(COLUMN_MAPNAME, mapObject.get_mapName());
@@ -118,17 +117,17 @@ public class DBHandler extends SQLiteOpenHelper {
     }
 
     //function to read all mapobjects from db
-    public List<MapObject> readAllMaps(){
+    public List<MapObject1> readAllMaps(){
 
         //get db writable
         SQLiteDatabase db = getWritableDatabase();
-        List<MapObject> mapObjects = new ArrayList<MapObject>();
+        List<MapObject1> mapObjects = new ArrayList<MapObject1>();
         Cursor c = db.query(TABLE_MAPS, columns, null, null, null,null,null);
 
         c.moveToFirst();
 
         while ((!c.isAfterLast())){
-            MapObject mapObject = new MapObject();
+            MapObject1 mapObject = new MapObject1();
             mapObject.set_id(Integer.parseInt(c.getString(0)));
             mapObject.set_mapName(c.getString(1));
             mapObject.set_mapDescription(c.getString(2));
@@ -150,7 +149,7 @@ public class DBHandler extends SQLiteOpenHelper {
 
 
     //Deleting mapobject
-    public boolean deleteMap(MapObject mapObject){
+    public boolean deleteMap(MapObject1 mapObject){
 
         String filePath = getFilePathToImage(mapObject.get_id());
         SQLiteDatabase db = getWritableDatabase();
@@ -227,7 +226,7 @@ public class DBHandler extends SQLiteOpenHelper {
     }
 
 
-    public void updateMap(MapObject mapObject) {
+    public void updateMap(MapObject1 mapObject) {
 
         SQLiteDatabase db = getWritableDatabase();
 

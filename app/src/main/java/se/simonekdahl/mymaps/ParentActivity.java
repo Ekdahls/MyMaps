@@ -1,48 +1,69 @@
 package se.simonekdahl.mymaps;
 
 import android.app.Activity;
-import android.app.Fragment;
 import android.content.Context;
 import android.content.ContextWrapper;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.net.Uri;
+
+import androidx.annotation.Nullable;
+import androidx.appcompat.app.AppCompatActivity;
+import se.simonekdahl.mymaps.dao.DaoMaster;
+import se.simonekdahl.mymaps.dao.DaoSession;
+
 import android.os.Bundle;
-import android.os.Environment;
-import android.os.Parcelable;
-import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.View;
-import android.view.ViewGroup;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.EditText;
-import android.widget.ImageView;
 
-import com.google.android.gms.appindexing.Action;
-import com.google.android.gms.appindexing.AppIndex;
-import com.google.android.gms.common.api.GoogleApiClient;
+import org.greenrobot.greendao.database.Database;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.Serializable;
-import java.text.SimpleDateFormat;
-import java.util.Date;
 
 public class ParentActivity extends AppCompatActivity{
 
     private static final String TAG = "ParentActivity";
     private String FILE_NAME = "";
+    private DaoSession daoSession;
+
+    @Override
+    protected void onCreate(@Nullable Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+
+
+
+        // regular SQLite database
+        DaoMaster.DevOpenHelper helper = new DaoMaster.DevOpenHelper(this, "notes-db");
+        Database db = helper.getWritableDb();
+
+        // encrypted SQLCipher database
+        // note: you need to add SQLCipher to your dependencies, check the build.gradle file
+        // DaoMaster.DevOpenHelper helper = new DaoMaster.DevOpenHelper(this, "notes-db-encrypted");
+        // Database db = helper.getEncryptedWritableDb("encryption-key");
+
+        daoSession = new DaoMaster(db).newSession();
+
+    }
+
+    public DaoSession getDaoSession() {
+        return daoSession;
+    }
+
     /**
      * ATTENTION: This was auto-generated to implement the App Indexing API.
      * See https://g.co/AppIndexing/AndroidStudio for more information.
      * This activity is used in order to hide the soft keyboard when user clicks outside editTex
      * Can be used as an extenstion by any activity who needs this function.
      */
+
+
 
 
     //If backarrow is pressed. terminate the activity

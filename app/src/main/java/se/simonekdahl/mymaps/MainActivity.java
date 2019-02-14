@@ -3,6 +3,7 @@ package se.simonekdahl.mymaps;
 import android.Manifest;
 import android.app.AlertDialog;
 import android.app.Dialog;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
@@ -11,24 +12,35 @@ import android.location.Address;
 import android.location.Criteria;
 import android.location.Geocoder;
 import android.location.Location;
+import android.location.LocationListener;
 import android.location.LocationManager;
 import android.os.PersistableBundle;
 import android.provider.Settings;
-import android.support.design.widget.BottomSheetBehavior;
-import android.support.design.widget.FloatingActionButton;
-import android.support.design.widget.NavigationView;
-import android.support.v4.app.ActivityCompat;
-import android.support.v4.view.GravityCompat;
-import android.support.v4.widget.DrawerLayout;
-import android.support.v7.app.ActionBarDrawerToggle;
+
+import com.google.android.gms.maps.LocationSource;
+import com.google.android.gms.maps.model.CameraPosition;
+import com.google.android.material.floatingactionbutton.FloatingActionButton;
+import com.google.android.material.navigation.NavigationView;
+
+import androidx.annotation.NonNull;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
+import androidx.core.view.GravityCompat;
+import androidx.drawerlayout.widget.DrawerLayout;
+import androidx.appcompat.app.ActionBarDrawerToggle;
+
 import android.os.Bundle;
-import android.support.v7.widget.Toolbar;
+
+import androidx.appcompat.widget.Toolbar;
+
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
-import android.support.v7.widget.SearchView;
+
+import androidx.appcompat.widget.SearchView;
+
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -49,13 +61,17 @@ import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.List;
 
 import se.simonekdahl.mymaps.bottomsheet.MapObjectBottomSheetDialogFragment;
+import se.simonekdahl.mymaps.dao.MapObject;
+import se.simonekdahl.mymaps.utils.PermissionUtils;
 
 public class MainActivity extends ParentActivity
-        implements NavigationView.OnNavigationItemSelectedListener, OnMapReadyCallback, GoogleMap.OnMapClickListener, GoogleMap.OnMapLongClickListener, GoogleMap.OnMarkerClickListener {
+        implements NavigationView.OnNavigationItemSelectedListener, LocationListener, OnMapReadyCallback, GoogleMap.OnMapClickListener, GoogleMap.OnMapLongClickListener, GoogleMap.OnMarkerClickListener {
 
+    private static final int LOCATION_PERMISSION_REQUEST_CODE = 1;
     private static final int ERROR_DIALOG_REQUEST = 9001;
     private static final int GPS_ENABLE_REQUEST = 9002;
     private static final int PERMISSION_ACCESS_COARSE_LOCATION = 1;
@@ -75,15 +91,78 @@ public class MainActivity extends ParentActivity
 
     private Marker latestMarker;
 
+    private HashMap<Marker, MapObject1> mapMarkerMap;
+
+    TextView loadingIndicator;
+
+    private boolean mPermissionDenied = false;
+
+    private static final long MIN_TIME = 400;
+    private static final float MIN_DISTANCE = 1000;
+
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
         this.savedInstanceState = savedInstanceState;
 
+
+        if (servicesOK()) {
+
+            //initiate UI
+            setContentView(R.layout.nav_drawer_main);
+            Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+            setSupportActionBar(toolbar);
+
+            FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
+
+            assert fab != null;
+            fab.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View view) {
+
+                    // Intent i = new Intent(MainActivity.this, GroundOverlayActivity.class);
+                    Intent i = new Intent(MainActivity.this, ChoseFileActivity.class);
+
+                    i.putExtra("CURRENT_LATITUDE", mMap.getCameraPosition().target.latitude);
+                    i.putExtra("CURRENT_LONGITUDE", mMap.getCameraPosition().target.longitude);
+                    i.putExtra("CURRENT_ZOOM", mMap.getCameraPosition().zoom);
+
+                    startActivityForResult(i, 1);
+
+                }
+            });
+
+            DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
+            ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
+                    this, drawer, toolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close);
+            assert drawer != null;
+            drawer.addDrawerListener(toggle);
+            toggle.syncState();
+
+            NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
+            assert navigationView != null;
+            navigationView.setNavigationItemSelectedListener(this);
+
+            SupportMapFragment mapFragment =
+                    (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map);
+            mapFragment.getMapAsync(this);
+        }
+
+
+
+
+        /*
+
+
+        mapMarkerMap = new HashMap<>();
+
         locationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
 
         llBottomSheet = (LinearLayout) findViewById(R.id.bottom_sheet);
+
+
 
         //BottomSheetBehavior bottomSheetBehavior = BottomSheetBehavior.from(llBottomSheet);
 
@@ -125,7 +204,7 @@ public class MainActivity extends ParentActivity
                 ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
                         this, drawer, toolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close);
                 assert drawer != null;
-                drawer.setDrawerListener(toggle);
+                drawer.addDrawerListener(toggle);
                 toggle.syncState();
 
                 NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
@@ -147,6 +226,8 @@ public class MainActivity extends ParentActivity
         catch (Exception e){
             e.printStackTrace();
         }
+
+        */
     }
 
 
@@ -186,6 +267,7 @@ public class MainActivity extends ParentActivity
                 }
                 return true;
             }
+
             @Override
             public boolean onQueryTextChange(String s) {
                 return false;
@@ -222,15 +304,15 @@ public class MainActivity extends ParentActivity
         return super.onOptionsItemSelected(item);
     }
 
-//Function to control if gps is enabled , and if not, alert user to turn it on
+    //Function to control if gps is enabled , and if not, alert user to turn it on
     public void checkIfGpsEnabled() {
-        if (!locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)){
+        if (!locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
             showGPSDisabledAlertToUser();
         }
     }
 
     //Function to alert user if GPS is currently turned off on the device
-    private void showGPSDisabledAlertToUser(){
+    private void showGPSDisabledAlertToUser() {
         AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(this);
         alertDialogBuilder.setMessage(R.string.Alert_message_GPS_is_disabled)
                 .setPositiveButton(R.string.Go_to_gps_settings_text,
@@ -280,21 +362,20 @@ public class MainActivity extends ParentActivity
 
 
     //Enable Gps-tracking on the map. checks the manifest for permissions. makes persmission request to get location
-    public void enableGPS(){
+    public void enableGPS() {
 
         //Needs to have this check
         if (ActivityCompat.checkSelfPermission(this,
                 Manifest.permission.ACCESS_FINE_LOCATION)
-                != PackageManager.PERMISSION_GRANTED ) {
+                != PackageManager.PERMISSION_GRANTED) {
 
             ActivityCompat.requestPermissions(this, new String[]
                             {Manifest.permission.ACCESS_FINE_LOCATION},
                     PERMISSION_ACCESS_FINE_LOCATION);
-        }
-        else{
+        } else {
             mMap.setMyLocationEnabled(true);
 
-            }
+        }
     }
 
 
@@ -332,7 +413,7 @@ public class MainActivity extends ParentActivity
     public void onStart() {
         super.onStart();
 
-        if(client!=null) {
+        if (client != null) {
             client.connect();
             //loadGroundOverlayData();
         }
@@ -342,7 +423,7 @@ public class MainActivity extends ParentActivity
     public void onStop() {
         super.onStop();
 
-        if(client!=null && client.isConnected()) {
+        if (client != null && client.isConnected()) {
             client.disconnect();
         }
     }
@@ -369,7 +450,7 @@ public class MainActivity extends ParentActivity
         float zoom = savedInstanceState.getFloat("CURRENT_ZOOM");
 
         mMap.setMapType(mapType);
-        gotoLocation(latitude,longitude,zoom);
+        gotoLocation(latitude, longitude, zoom);
         loadGroundOverlayData();
 
     }
@@ -387,7 +468,7 @@ public class MainActivity extends ParentActivity
 
         } else if (id == R.id.nav_my_maps) {
             Intent i = new Intent(MainActivity.this, MapList.class);
-            startActivityForResult(i,3);
+            startActivityForResult(i, 3);
 
         } else if (id == R.id.nav_home) {
 
@@ -401,39 +482,18 @@ public class MainActivity extends ParentActivity
         return true;
     }
 
-    //checks the permission requests.
-    @Override
-    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-
-        switch (requestCode) {
-            case PERMISSION_ACCESS_FINE_LOCATION:
-                if (grantResults.length > 0 && grantResults[0]
-                        == PackageManager.PERMISSION_GRANTED) {
-                    // All good!
-                    enableGPS();
-
-                } else {
-                    Toast.makeText(this, R.string.app_need_location_to_work_toast,
-                            Toast.LENGTH_LONG).show();
-                    // User did not grant permission
-                }
-                break;
-        }
-    }
-
     //PARENT
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
 
-        if(requestCode == GPS_ENABLE_REQUEST && resultCode == 0){
+        if (requestCode == GPS_ENABLE_REQUEST && resultCode == 0) {
             String provider = Settings.Secure.getString(getContentResolver(), Settings.Secure.LOCATION_PROVIDERS_ALLOWED);
-            if(provider != null){
+            if (provider != null) {
                 Log.v(TAG, " Location providers: " + provider);
                 Toast.makeText(this, R.string.gps_has_been_turned_on_toast,
                         Toast.LENGTH_LONG).show();
-            }else{
+            } else {
                 Toast.makeText(this, R.string.GPS_is_turned_off_toast,
                         Toast.LENGTH_LONG).show();
             }
@@ -443,37 +503,35 @@ public class MainActivity extends ParentActivity
 
     }
 
-    private void loadGroundOverlayData(){
+    private void loadGroundOverlayData() {
 
-        if(handler == null){
-            handler = new DBHandler(this);
-        }
+        getDaoSession().getMapObjectDao().queryBuilder().list();
 
-        mapObjects = handler.readAllMaps();
+        mapObjects = getDaoSession().getMapObjectDao().queryBuilder().list();
 
         //clear the map from old overlays.
         mMap.clear();
 
-        for(MapObject m : mapObjects){
+        for (MapObject m : mapObjects) {
 
             //If the mapobject has two tiepoints, place a the groundoverlay on the map.
-            if(m.get_tiePointOne() >0 && m.get_tiePointTwo()>0){
+            if (m.getTiePointOne() > 0 && m.getTiePointTwo() > 0) {
                 //Add all groundoverlays to the map
                 GroundOverlayOptions gO = new GroundOverlayOptions();
-                LatLng latLng = new LatLng(m.get_tiePointOne(),m.get_tiePointTwo());
+                LatLng latLng = new LatLng(m.getTiePointOne(), m.getTiePointTwo());
 
                 //Just for logging
-                Log.d(TAG, "Tiepoint one is: " + m.get_tiePointOne());
-                Log.d(TAG, "Tiepoint two is: " + m.get_tiePointTwo());
+                Log.d(TAG, "Tiepoint one is: " + m.getTiePointOne());
+                Log.d(TAG, "Tiepoint two is: " + m.getTiePointTwo());
                 Log.d(TAG, "LATNG:  = " + latLng);
-                Log.d(TAG, "Width : = " + m.get_Size());
-                Log.d(TAG, "Bearing: =  " + m.get_Rotation());
-                Log.d(TAG, "FILENAME: = "+ m.get_bitmapName());
-                Log.d(TAG, "FilePath: = " + m.get_filePath());
+                Log.d(TAG, "Width : = " + m.getSize());
+                Log.d(TAG, "Bearing: =  " + m.getRotation());
+                Log.d(TAG, "FILENAME: = " + m.getBitmapName());
+                Log.d(TAG, "FilePath: = " + m.getFilePath());
 
-                gO.position(latLng,(float) m.get_Size());
-                gO.bearing((float)m.get_Rotation());
-                Bitmap bM = loadImageFromStorage(m.get_filePath(), m.get_id());
+                gO.position(latLng, (float) m.getSize());
+                gO.bearing((float) m.getRotation());
+                Bitmap bM = loadImageFromStorage(m.getFilePath(), m.getId());
                 gO.image(BitmapDescriptorFactory.fromBitmap(bM));
 
                 mMap.addGroundOverlay(gO);
@@ -501,7 +559,7 @@ public class MainActivity extends ParentActivity
 
         // Adding marker on the GoogleMap
 
-        if(latestMarker != null){
+        if (latestMarker != null) {
             latestMarker.remove();
             latestMarker = null;
         }
@@ -512,8 +570,28 @@ public class MainActivity extends ParentActivity
         // Showing InfoWindow on the GoogleMap
         marker.showInfoWindow();
 
-        MapObjectBottomSheetDialogFragment f = MapObjectBottomSheetDialogFragment.newInstance();
-        f.show(getSupportFragmentManager(), "add_photo_dialog_fragment");
+        showMarker(marker);
+
+
+    }
+
+    private void showMarker(final Marker marker) {
+        CameraPosition cameraPosition = new CameraPosition.Builder()
+                .target(marker.getPosition())
+                .zoom(17).build();
+        //Zoom in and animate the camera.
+        mMap.animateCamera(CameraUpdateFactory.newCameraPosition(cameraPosition), new GoogleMap.CancelableCallback() {
+            @Override
+            public void onFinish() {
+                MapObjectBottomSheetDialogFragment f = MapObjectBottomSheetDialogFragment.newInstance(marker);
+                f.show(getSupportFragmentManager(), "add_photo_dialog_fragment");
+            }
+
+            @Override
+            public void onCancel() {
+
+            }
+        });
 
 
     }
@@ -524,13 +602,38 @@ public class MainActivity extends ParentActivity
 
         mMap = googleMap;
 
+        mMap.setOnMapClickListener(this);
+        mMap.setOnMapLongClickListener(this);
+        mMap.setOnMarkerClickListener(this);
+
+        enableMyLocation();
+
+        initialZoom();
+
+        if (getIntent().getDoubleExtra("MAP_LATITUDE", 0) > 0 && getIntent().getDoubleExtra("MAP_LONGITUDE", 0) > 0) {
+
+            gotoLocation(getIntent().getDoubleExtra("MAP_LATITUDE", 0), getIntent().getDoubleExtra("MAP_LONGITUDE", 0), 12);
+            //Reset the intent
+            getIntent().putExtra("MAP_LATITUDE", 0);
+            getIntent().putExtra("MAP_LONGITUDE", 0);
+
+
+            //If the app is opened for the first time the instacestate is null.
+            //Move the camera to users position, fairly zoomed out.
+        } else if (savedInstanceState == null) {
+            loadGroundOverlayData();
+        }
+
+
+
+
+        /*
+
         enableGPS();
 
         setInfoWindow();
 
-        mMap.setOnMapClickListener(this);
-        mMap.setOnMapLongClickListener(this);
-        mMap.setOnMarkerClickListener(this);
+
 
         Toast.makeText(this, R.string.ready_to_map, Toast.LENGTH_SHORT).show();
 
@@ -546,14 +649,11 @@ public class MainActivity extends ParentActivity
             //Move the camera to users position, fairly zoomed out.
         } else if (savedInstanceState == null) {
 
-            // Get LocationManager object from System Service LOCATION_SERVICE
-            LocationManager locationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
 
-            // Create a criteria object to retrieve provider
-            Criteria criteria = new Criteria();
 
-            // Get the name of the best provider
-            String provider = locationManager.getBestProvider(criteria, true);
+
+
+
 
             // Get Current Location
             //Needs to have this check
@@ -567,24 +667,131 @@ public class MainActivity extends ParentActivity
                         PERMISSION_ACCESS_FINE_LOCATION);
             }
 
-            if (locationManager.getLastKnownLocation(provider) != null) {
-                Location myLocation = locationManager.getLastKnownLocation(provider);
+            // Get LocationManager object from System Service LOCATION_SERVICE
+            final LocationManager locationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
 
-                // Get latitude of the current location
-                double latitude = myLocation.getLatitude();
+            // Create a criteria object to retrieve provider
+            Criteria criteria = new Criteria();
 
-                // Get longitude of the current location
-                double longitude = myLocation.getLongitude();
+            // Get the name of the best provider
+            String provider = locationManager.getBestProvider(criteria, true);
 
-                gotoLocation(latitude, longitude, 7);
-            }
+            locationManager.requestLocationUpdates(provider, 0, 0, new LocationListener() {
+                @Override
+                public void onLocationChanged(Location location) {
+                    // Get latitude of the current location
+                    double latitude = location.getLatitude();
+
+                    // Get longitude of the current location
+                    double longitude = location.getLongitude();
+
+                    gotoLocation(latitude, longitude, 7);
+
+                    locationManager.removeUpdates(this);
+
+                    loadingIndicator = findViewById(R.id.loading_indicator);
+
+                    loadingIndicator.setVisibility(View.GONE);
+                }
+
+                @Override
+                public void onStatusChanged(String provider, int status, Bundle extras) {
+
+                }
+
+                @Override
+                public void onProviderEnabled(String provider) {
+
+                }
+
+                @Override
+                public void onProviderDisabled(String provider) {
+
+                }
+            });
         }
 
         handler = new DBHandler(this);
         //Load all groundoverlays to map.
         loadGroundOverlayData();
 
+    */
 
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions,
+                                           @NonNull int[] grantResults) {
+        if (requestCode != LOCATION_PERMISSION_REQUEST_CODE) {
+            return;
+        }
+
+        if (PermissionUtils.isPermissionGranted(permissions, grantResults,
+                Manifest.permission.ACCESS_FINE_LOCATION)) {
+            // Enable the my location layer if the permission has been granted.
+            enableMyLocation();
+        } else {
+            // Display the missing permission error dialog when the fragments resume.
+            mPermissionDenied = true;
+        }
+    }
+
+    /**
+     * Enables the My Location layer if the fine location permission has been granted.
+     */
+    private void enableMyLocation() {
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
+                != PackageManager.PERMISSION_GRANTED) {
+            // Permission to access the location is missing.
+            PermissionUtils.requestPermission(this, LOCATION_PERMISSION_REQUEST_CODE,
+                    Manifest.permission.ACCESS_FINE_LOCATION, true);
+        } else if (mMap != null) {
+            // Access to the location has been granted to the app.
+            mMap.setMyLocationEnabled(true);
+        }
+    }
+
+    /**
+     * Enables the My Location layer if the fine location permission has been granted.
+     */
+    private void initialZoom() {
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
+                != PackageManager.PERMISSION_GRANTED) {
+            // Permission to access the location is missing.
+            PermissionUtils.requestPermission(this, LOCATION_PERMISSION_REQUEST_CODE,
+                    Manifest.permission.ACCESS_FINE_LOCATION, true);
+        } else if (mMap != null) {
+            // Access to the location has been granted to the app.
+            // Get LocationManager object from System Service LOCATION_SERVICE
+            final LocationManager locationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
+            // Create a criteria object to retrieve provider
+            Criteria criteria = new Criteria();
+
+            // Get the name of the best provider
+            String provider = locationManager.getBestProvider(criteria, true);
+
+            if(provider != null){
+                locationManager.requestLocationUpdates(provider, 0, 0, this);
+            }
+        }
+    }
+
+    @Override
+    protected void onResumeFragments() {
+        super.onResumeFragments();
+        if (mPermissionDenied) {
+            // Permission was not granted, display error dialog.
+            showMissingPermissionError();
+            mPermissionDenied = false;
+        }
+    }
+
+    /**
+     * Displays a dialog with error message explaining that the location permission is missing.
+     */
+    private void showMissingPermissionError() {
+        PermissionUtils.PermissionDeniedDialog
+                .newInstance(true).show(getSupportFragmentManager(), "dialog");
     }
 
     private void setInfoWindow() {
@@ -627,10 +834,37 @@ public class MainActivity extends ParentActivity
     @Override
     public boolean onMarkerClick(Marker marker) {
 
-        MapObjectBottomSheetDialogFragment f = MapObjectBottomSheetDialogFragment.newInstance();
-        f.show(getSupportFragmentManager(), "add_photo_dialog_fragment");
+        showMarker(marker);
 
         return true;
+
+    }
+
+    @Override
+    public void onLocationChanged(Location location) {
+
+        LatLng latLng = new LatLng(location.getLatitude(), location.getLongitude());
+        CameraUpdate cameraUpdate = CameraUpdateFactory.newLatLngZoom(latLng, 15);
+        mMap.animateCamera(cameraUpdate);
+        locationManager.removeUpdates(this);
+
+        loadingIndicator = findViewById(R.id.loading_indicator);
+        loadingIndicator.setVisibility(View.GONE);
+
+    }
+
+    @Override
+    public void onStatusChanged(String provider, int status, Bundle extras) {
+
+    }
+
+    @Override
+    public void onProviderEnabled(String provider) {
+
+    }
+
+    @Override
+    public void onProviderDisabled(String provider) {
 
     }
 }

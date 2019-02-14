@@ -24,11 +24,11 @@ import java.util.List;
  */
 public class CustomAdapter extends BaseAdapter {
 
-    private List<MapObject> items;
+    private List<MapObject1> items;
     private Context context;
     private LayoutInflater inflater;
 
-    public CustomAdapter(Context _context, List<MapObject> _items){
+    public CustomAdapter(Context _context, List<MapObject1> _items){
         inflater = LayoutInflater.from(_context);
         this.items = _items;
         this.context = _context;
@@ -53,7 +53,7 @@ public class CustomAdapter extends BaseAdapter {
     @Override
     public View getView(int position, View convertView, ViewGroup parent) {
 
-        MapObject map = items.get(position);
+        MapObject1 map = items.get(position);
         View view = convertView;
 
         if(view == null)

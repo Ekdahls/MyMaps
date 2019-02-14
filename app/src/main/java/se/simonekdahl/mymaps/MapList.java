@@ -2,8 +2,8 @@ package se.simonekdahl.mymaps;
 
 import android.content.Intent;
 import android.os.Bundle;
-import android.support.design.widget.FloatingActionButton;
-import android.support.v7.widget.Toolbar;
+import com.google.android.material.floatingactionbutton.FloatingActionButton;
+import androidx.appcompat.widget.Toolbar;
 import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
@@ -17,7 +17,7 @@ public class MapList extends ParentActivity {
 
     private static final String TAG = "MapList";
     private DBHandler handler;
-    List<MapObject> mapObjects;
+    List<MapObject1> mapObjects;
     ListView lv;
 
     @Override
@@ -98,7 +98,7 @@ public class MapList extends ParentActivity {
         lv.setAdapter(adapter);
 
 
-        for(MapObject m : mapObjects){
+        for(MapObject1 m : mapObjects){
             String record = "ID=" + m.get_id() + " | Name=" + m.get_mapName() + " | " + m.get_mapDescription() +
                     " Filepath = " + m.get_filePath() + " Filnamet är " + m.get_bitmapName();
 

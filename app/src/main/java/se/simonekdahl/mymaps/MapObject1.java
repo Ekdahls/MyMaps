@@ -1,17 +1,13 @@
 package se.simonekdahl.mymaps;
 
-import android.content.ContentValues;
-import android.graphics.Bitmap;
 import android.os.Parcel;
 import android.os.Parcelable;
-
-import com.google.android.gms.maps.model.BitmapDescriptor;
 
 
 /**
  * Created by Simon on 16-03-22.
  */
-public class MapObject implements Parcelable {
+public class MapObject1 implements Parcelable {
     // private Bitmap _bitmap;
     // private BitmapDescriptor _imageBitmap;
     private int _id;
@@ -26,13 +22,13 @@ public class MapObject implements Parcelable {
 
 
 
-    public MapObject(String mapName, String mapDescription){
+    public MapObject1(String mapName, String mapDescription){
         _mapName = mapName;
         _mapDescription = mapDescription;
 
     }
 
-    public MapObject(){
+    public MapObject1(){
 
     }
 
@@ -108,7 +104,7 @@ public class MapObject implements Parcelable {
         this._tiePointTwo = _tiePointTwo;
     }
 
-    protected MapObject(Parcel in) {
+    protected MapObject1(Parcel in) {
         _id = in.readInt();
         _mapName = in.readString();
         _mapDescription = in.readString();
@@ -139,15 +135,15 @@ public class MapObject implements Parcelable {
     }
 
     @SuppressWarnings("unused")
-    public static final Parcelable.Creator<MapObject> CREATOR = new Parcelable.Creator<MapObject>() {
+    public static final Parcelable.Creator<MapObject1> CREATOR = new Parcelable.Creator<MapObject1>() {
         @Override
-        public MapObject createFromParcel(Parcel in) {
-            return new MapObject(in);
+        public MapObject1 createFromParcel(Parcel in) {
+            return new MapObject1(in);
         }
 
         @Override
-        public MapObject[] newArray(int size) {
-            return new MapObject[size];
+        public MapObject1[] newArray(int size) {
+            return new MapObject1[size];
         }
     };
 

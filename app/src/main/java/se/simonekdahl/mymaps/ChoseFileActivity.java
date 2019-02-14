@@ -9,7 +9,11 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
 import android.provider.MediaStore;
-import android.support.v7.widget.Toolbar;
+import androidx.appcompat.widget.Toolbar;
+import se.simonekdahl.mymaps.dao.DaoSession;
+import se.simonekdahl.mymaps.dao.MapObject;
+import se.simonekdahl.mymaps.dao.MapObjectDao;
+
 import android.text.method.ScrollingMovementMethod;
 import android.util.Log;
 import android.view.Menu;
@@ -22,11 +26,12 @@ import android.widget.ImageView;
 import android.widget.Scroller;
 import android.widget.Toast;
 
+import org.greenrobot.greendao.query.WhereCondition;
+
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.Serializable;
 
 public class ChoseFileActivity extends ParentActivity {
 
@@ -45,9 +50,19 @@ public class ChoseFileActivity extends ParentActivity {
     private String mapName = null;
     private String mapDescription = null;
 
+    private MapObjectDao mapObjectDao;
+
     //Databasehandler
     DBHandler dbHandler;
-    
+
+    private MapObjectDao getMapObjectDao(){
+        if(mapObjectDao == null){
+            mapObjectDao = getDaoSession().getMapObjectDao();
+        }
+
+        return mapObjectDao;
+    }
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -99,9 +114,15 @@ public class ChoseFileActivity extends ParentActivity {
         //saves name and description of texviews
         mapName = mMapNameTextView.getText().toString();
         mapDescription = mMapDescriptionTextView.getText().toString();
-        mapObject = new MapObject(mapName,mapDescription);
+
+        mapObject = new MapObject();
+        mapObject.setDescription(mapDescription);
+        mapObject.setName(mapName);
         //Set id as filename in database
-       long id = saveToDB(mapObject,bitmapImage);
+        long id = saveToDB(mapObject,bitmapImage);
+
+        MapObject mapObject = getMapObjectDao().queryBuilder().where(MapObjectDao.Properties.Id.eq(id)).unique();
+
 
         Log.d(TAG, "mapName: " + mapName);
         Log.d(TAG, "Mapdesc: " + mapDescription);
@@ -111,7 +132,7 @@ public class ChoseFileActivity extends ParentActivity {
 
         //Add extras to intent
         i.putExtra("MAP_IMAGE_ID", id);
-        i.putExtra("MAP_IMAGE_FILE_PATH", dbHandler.getFilePathToImage(id));
+        i.putExtra("MAP_IMAGE_FILE_PATH", mapObject.getFilePath());
         //For the camera position when add new map button was pressed.
         i.putExtra("CURRENT_LATITUDE",getIntent().getDoubleExtra("CURRENT_LATITUDE", 0));
         i.putExtra("CURRENT_LONGITUDE", getIntent().getDoubleExtra("CURRENT_LONGITUDE", 0));
@@ -205,16 +226,21 @@ public class ChoseFileActivity extends ParentActivity {
     //function for saving Mapinfo to database and mapimage to internal storage
     public long saveToDB(MapObject mapObject, Bitmap bitmap){
 
-       long id = dbHandler.addMap(mapObject);
-        dbHandler.addMapNameToDB(id);
+        long id = getMapObjectDao().insert(mapObject);
+        mapObject.update();
+
+        mapObject.setBitmapName(String.valueOf(id));
+        getMapObjectDao().save(mapObject);
+
         String fileName = String.valueOf(id);
         String filePath = saveToInternalStorage(bitmap, fileName);
 
-        //Add the filepath to the image from device internal storage to the database
-        dbHandler.addFilePathToDB(id, filePath);
+        mapObject.setFilePath(filePath);
 
-        //Send back the reference id of the created map object in database
+        getMapObjectDao().save(mapObject);
+
         return id;
+
     }
 
 
@@ -262,10 +288,10 @@ public class ChoseFileActivity extends ParentActivity {
 
                 mapName = mMapNameTextView.getText().toString();
                 mapDescription = mMapDescriptionTextView.getText().toString();
-                mapObject = new MapObject(mapName,mapDescription);
-
-                //Set id as filename
-                saveToDB(mapObject,bitmapImage);
+                mapObject = new MapObject();
+                mapObject.setName(mapName);
+                mapObject.setDescription(mapDescription);
+                mapObject.update();
 
                 String toastText = getString(R.string.saved_map);
                 Toast.makeText(this, toastText, Toast.LENGTH_SHORT).show();
