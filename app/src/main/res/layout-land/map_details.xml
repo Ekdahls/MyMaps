@@ -1,11 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <android.support.design.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:fitsSystemWindows="true"
-    tools:context="se.simonekdahl.mymaps.TestActivity">
+    android:fitsSystemWindows="true">
 
     <android.support.design.widget.AppBarLayout
         android:layout_width="match_parent"
@@ -21,7 +19,7 @@
 
     </android.support.design.widget.AppBarLayout>
 
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:padding="@dimen/nav_header_vertical_spacing"
@@ -29,11 +27,12 @@
     >
 
     <Button
-        android:id="@+id/btn_back_to_maps"
-        android:text="@string/back_to_maps_list"
+        android:id="@+id/btn_delete_map_objectbtn_back_to_maps"
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
-        android:layout_alignParentBottom="true"/>
+        android:layout_alignParentBottom="true"
+        android:background="@android:color/holo_red_dark"
+        android:text="@string/delete" />
 
     <RelativeLayout android:layout_width="match_parent"
         android:layout_height="match_parent"
@@ -49,6 +48,17 @@
             android:layout_below="@+id/textView_mapdetails"
             android:layout_alignParentLeft="true"
             android:layout_alignParentStart="true" />
+
+        <Button
+            android:id="@+id/button_go_to_map"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@+id/table_layout"
+            android:layout_centerHorizontal="true"
+            android:layout_gravity="center"
+            android:layout_marginTop="51dp"
+            android:layout_marginBottom="25dp"
+            android:text="@string/go_to" />
 
         <TextView
             android:id="@+id/textView_mapdetails"
@@ -80,12 +90,13 @@
                     android:text="@string/Map_details_name"
                     android:textAppearance="?android:attr/textAppearanceMedium" />
 
-                <TextView
+                <EditText
                     android:id="@+id/textView_insert_mapname"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:hint="Name of your map"
-                    android:textAppearance="?android:attr/textAppearanceMedium" />
+                    android:textAppearance="?android:attr/textAppearanceMedium"
+                    android:inputType="text" />
 
             </TableRow>
 
@@ -104,7 +115,7 @@
                     android:text="@string/Map_details_desc"
                     android:textAppearance="?android:attr/textAppearanceMedium" />
 
-                <TextView
+                <EditText
                     android:id="@+id/textView_insert_desc"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
@@ -130,18 +141,13 @@
                 android:hint="placeholder for other map id"
                 android:padding="5dp" />
             </TableRow>
+
+
         </TableLayout>
 
 
 
-        <Button
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/go_to"
-            android:id="@+id/button_go_to_map"
-            android:layout_gravity="center"
-            android:layout_alignBottom="@+id/map_image_view_in_details"
-            android:layout_centerHorizontal="true" />
+
     </RelativeLayout>
 
 </RelativeLayout>

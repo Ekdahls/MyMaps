@@ -55,6 +55,9 @@ public class MapList extends ParentActivity {
             public void onItemClick(AdapterView<?> parent, View view, int position,
                                     long id) {
                 Intent intent = new Intent(MapList.this, MapDetails.class);
+
+                intent.putExtra("MAP", mapObjects.get(position));
+
                 intent.putExtra("MAP_ID", mapObjects.get(position).get_id());
                 intent.putExtra("MAP_NAME", mapObjects.get(position).get_mapName());
                 intent.putExtra("MAP_DESC", mapObjects.get(position).get_mapDescription());

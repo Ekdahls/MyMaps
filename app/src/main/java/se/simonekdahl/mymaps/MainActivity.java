@@ -14,6 +14,7 @@ import android.location.Location;
 import android.location.LocationManager;
 import android.os.PersistableBundle;
 import android.provider.Settings;
+import android.support.design.widget.BottomSheetBehavior;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.NavigationView;
 import android.support.v4.app.ActivityCompat;
@@ -28,6 +29,8 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.support.v7.widget.SearchView;
+import android.widget.LinearLayout;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.google.android.gms.appindexing.AppIndex;
@@ -42,12 +45,16 @@ import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.GroundOverlayOptions;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.Marker;
+import com.google.android.gms.maps.model.MarkerOptions;
 
 import java.io.IOException;
 import java.util.List;
 
+import se.simonekdahl.mymaps.bottomsheet.MapObjectBottomSheetDialogFragment;
+
 public class MainActivity extends ParentActivity
-        implements NavigationView.OnNavigationItemSelectedListener, OnMapReadyCallback {
+        implements NavigationView.OnNavigationItemSelectedListener, OnMapReadyCallback, GoogleMap.OnMapClickListener, GoogleMap.OnMapLongClickListener, GoogleMap.OnMarkerClickListener {
 
     private static final int ERROR_DIALOG_REQUEST = 9001;
     private static final int GPS_ENABLE_REQUEST = 9002;
@@ -61,10 +68,12 @@ public class MainActivity extends ParentActivity
     private DBHandler handler;
     List<MapObject> mapObjects;
     GoogleMap mMap;
-
+    LinearLayout llBottomSheet;
     //Googles api client
     private GoogleApiClient client;
     private Bundle savedInstanceState;
+
+    private Marker latestMarker;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -73,6 +82,12 @@ public class MainActivity extends ParentActivity
         this.savedInstanceState = savedInstanceState;
 
         locationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
+
+        llBottomSheet = (LinearLayout) findViewById(R.id.bottom_sheet);
+
+        //BottomSheetBehavior bottomSheetBehavior = BottomSheetBehavior.from(llBottomSheet);
+
+        //bottomSheetBehavior.setState(BottomSheetBehavior.STATE_HIDDEN);
 
         //control if user has gps enabled on his/her device
         checkIfGpsEnabled();
@@ -469,12 +484,53 @@ public class MainActivity extends ParentActivity
     }
 
     @Override
+    public void onMapClick(LatLng latLng) {
+        mMap.animateCamera(CameraUpdateFactory.newLatLng(latLng));
+    }
+
+    @Override
+    public void onMapLongClick(LatLng point) {
+        // Creating an instance of MarkerOptions to set position
+        MarkerOptions markerOptions = new MarkerOptions();
+
+        // Setting position on the MarkerOptions
+        markerOptions.position(point);
+
+        // Animating to the currently touched position
+        mMap.animateCamera(CameraUpdateFactory.newLatLng(point));
+
+        // Adding marker on the GoogleMap
+
+        if(latestMarker != null){
+            latestMarker.remove();
+            latestMarker = null;
+        }
+
+        Marker marker = mMap.addMarker(markerOptions);
+
+        latestMarker = marker;
+        // Showing InfoWindow on the GoogleMap
+        marker.showInfoWindow();
+
+        MapObjectBottomSheetDialogFragment f = MapObjectBottomSheetDialogFragment.newInstance();
+        f.show(getSupportFragmentManager(), "add_photo_dialog_fragment");
+
+
+    }
+
+    @Override
     public void onMapReady(GoogleMap googleMap) {
 
 
         mMap = googleMap;
 
         enableGPS();
+
+        setInfoWindow();
+
+        mMap.setOnMapClickListener(this);
+        mMap.setOnMapLongClickListener(this);
+        mMap.setOnMarkerClickListener(this);
 
         Toast.makeText(this, R.string.ready_to_map, Toast.LENGTH_SHORT).show();
 
@@ -528,6 +584,53 @@ public class MainActivity extends ParentActivity
         //Load all groundoverlays to map.
         loadGroundOverlayData();
 
+
+    }
+
+    private void setInfoWindow() {
+        // Setting a custom info window adapter for the google map
+
+
+        mMap.setInfoWindowAdapter(new GoogleMap.InfoWindowAdapter() {
+            @Override
+            public View getInfoWindow(Marker marker) {
+                return null;
+            }
+
+            @Override
+            public View getInfoContents(Marker marker) {
+                // Getting view from the layout file info_window_layout
+                View v = getLayoutInflater().inflate(R.layout.marker_info_window, null);
+
+                // Getting the position from the marker
+                LatLng latLng = marker.getPosition();
+
+                // Getting reference to the TextView to set latitude
+                TextView tvLat = (TextView) v.findViewById(R.id.tv_lat);
+
+                // Getting reference to the TextView to set longitude
+                TextView tvLng = (TextView) v.findViewById(R.id.tv_lng);
+
+                // Setting the latitude
+                tvLat.setText("Latitude:" + latLng.latitude);
+
+                // Setting the longitude
+                tvLng.setText("Longitude:"+ latLng.longitude);
+
+                // Returning the view containing InfoWindow contents
+                return v;
+            }
+        });
+    }
+
+
+    @Override
+    public boolean onMarkerClick(Marker marker) {
+
+        MapObjectBottomSheetDialogFragment f = MapObjectBottomSheetDialogFragment.newInstance();
+        f.show(getSupportFragmentManager(), "add_photo_dialog_fragment");
+
+        return true;
 
     }
 }

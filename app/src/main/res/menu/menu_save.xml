@@ -3,6 +3,7 @@
 
     <item android:id="@+id/save"
         android:title="@string/save_image"
+        android:icon="@drawable/baseline_save_24"
         app:showAsAction="always"
         />
 

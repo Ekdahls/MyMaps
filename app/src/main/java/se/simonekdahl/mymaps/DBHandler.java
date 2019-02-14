@@ -150,18 +150,18 @@ public class DBHandler extends SQLiteOpenHelper {
 
 
     //Deleting mapobject
-    public boolean deleteMap(int id){
+    public boolean deleteMap(MapObject mapObject){
 
-        String filePath = getFilePathToImage(id);
+        String filePath = getFilePathToImage(mapObject.get_id());
         SQLiteDatabase db = getWritableDatabase();
-        int i = db.delete(TABLE_MAPS, COLUMN_ID + " = ?", new String[]{String.valueOf(id)});
+        int i = db.delete(TABLE_MAPS, COLUMN_ID + " = ?", new String[]{String.valueOf(mapObject.get_id())});
         db.close();
 
         //Remember to delete image object in phones internal memory as well.
         if(i !=0){
 
             Log.d(TAG, "Map reference was deleted from Database: ");
-           boolean deleted = deleteImageFile(filePath,id);
+           boolean deleted = deleteImageFile(filePath,mapObject.get_id());
             if(deleted){
                 Log.d(TAG, "internal mapfile was deleted!");
             }
@@ -227,5 +227,25 @@ public class DBHandler extends SQLiteOpenHelper {
     }
 
 
+    public void updateMap(MapObject mapObject) {
 
+        SQLiteDatabase db = getWritableDatabase();
+
+        ContentValues values = new ContentValues();
+
+        values.put(COLUMN_MAPNAME, mapObject.get_mapName());
+        values.put(COLUMN_MAPDESCRIPTION, mapObject.get_mapDescription());
+        values.put(COLUMN_BITMAP_NAME, mapObject.get_bitmapName());
+        values.put(COLUMN_FILE_PATH, mapObject.get_filePath());
+        values.put(COLUMN_TIEPOINT_ONE, mapObject.get_tiePointOne());
+        values.put(COLUMN_TIEPOINT_TWO, mapObject.get_tiePointTwo());
+        values.put(COLUMN_ROTATION, mapObject.get_Rotation());
+        values.put(COLUMN_SIZE, mapObject.get_Size());
+
+
+        db.update(TABLE_MAPS, values, COLUMN_ID + " = ?", new String[] { String.valueOf(mapObject.get_id()) });
+
+        db.close();
+
+    }
 }
