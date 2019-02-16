@@ -20,7 +20,7 @@ import org.greenrobot.greendao.DaoException;
         // Whether getters and setters for properties should be generated if missing.
         generateGettersSetters = true
 )
-public class MapObject implements Parcelable {
+public class MapObject implements Parcelable, Comparable<MapObject> {
 
 
     @Id(autoincrement = true)
@@ -232,13 +232,6 @@ public class MapObject implements Parcelable {
     }
 
 
-    /** called by internal mechanisms, do not call yourself. */
-    @Generated(hash = 788755102)
-    public void __setDaoSession(DaoSession daoSession) {
-        this.daoSession = daoSession;
-        myDao = daoSession != null ? daoSession.getMapObjectDao() : null;
-    }
-
     @SuppressWarnings("unused")
     public static final Parcelable.Creator<MapObject> CREATOR = new Parcelable.Creator<MapObject>() {
         @Override
@@ -251,4 +244,17 @@ public class MapObject implements Parcelable {
             return new MapObject[size];
         }
     };
+
+    @Override
+    public int compareTo(MapObject o) {
+        return this.getName().compareTo(o.getName());
+    }
+
+
+    /** called by internal mechanisms, do not call yourself. */
+    @Generated(hash = 788755102)
+    public void __setDaoSession(DaoSession daoSession) {
+        this.daoSession = daoSession;
+        myDao = daoSession != null ? daoSession.getMapObjectDao() : null;
+    }
 }

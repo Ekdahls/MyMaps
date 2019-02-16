@@ -1,18 +1,23 @@
 package se.simonekdahl.mymaps;
 
 import android.content.Intent;
+import android.database.Cursor;
+import android.database.MatrixCursor;
 import android.os.Bundle;
-import com.google.android.material.floatingactionbutton.FloatingActionButton;
-import androidx.appcompat.widget.Toolbar;
-import se.simonekdahl.mymaps.dao.MapObject;
-import se.simonekdahl.mymaps.dao.MapObjectDao;
-
 import android.util.Log;
 import android.view.View;
-import android.widget.AdapterView;
 import android.widget.ListView;
 
+import com.google.android.material.floatingactionbutton.FloatingActionButton;
+
 import java.util.List;
+
+import androidx.appcompat.widget.Toolbar;
+import androidx.lifecycle.ViewModelProviders;
+import androidx.loader.content.Loader;
+import androidx.recyclerview.widget.RecyclerView;
+import se.simonekdahl.mymaps.dao.MapObject;
+import se.simonekdahl.mymaps.dao.MapObjectDao;
 
 
 
@@ -23,6 +28,14 @@ public class MapList extends ParentActivity {
     ListView lv;
 
     private MapObjectDao mapObjectDao;
+
+    private RecyclerView mRecyclerView;
+
+    public final int offset = 30;
+    private int page = 0;
+    private boolean loadingMore = false;
+
+    MapListViewModel model;
 
     private MapObjectDao getMapObjectDao(){
         if(mapObjectDao == null){
@@ -59,29 +72,22 @@ public class MapList extends ParentActivity {
         });
 
         lv = findViewById(R.id.lv_maps_list);
-        lv.setOnItemClickListener(new AdapterView.OnItemClickListener() {
 
-            @Override
-            public void onItemClick(AdapterView<?> parent, View view, int position,
-                                    long id) {
-                Intent intent = new Intent(MapList.this, MapDetails.class);
-                intent.putExtra("MAP", mapObjects.get(position));
-                startActivity(intent);
-            }
+        model = ViewModelProviders.of(this).get(MapListViewModel.class);
+        model.getMapObjectList().observe(this, mapObjectList -> {
+
+            CustomAdapter adapter = new CustomAdapter(this, mapObjectList);
+            lv.setAdapter(adapter);
 
         });
-
-
-        loadContactData();
-
-
 
     }
 
     @Override
     protected void onResume() {
         super.onResume();
-        loadContactData();
+        model.getLatest();
+        //loadContactData();
     }
 
     private void loadContactData(){
@@ -105,7 +111,5 @@ public class MapList extends ParentActivity {
         }
 
     }
-
-
 
 }

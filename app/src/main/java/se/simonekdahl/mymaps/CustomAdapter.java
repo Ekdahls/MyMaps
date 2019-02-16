@@ -1,6 +1,7 @@
 package se.simonekdahl.mymaps;
 
 import android.content.Context;
+import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.media.ThumbnailUtils;
@@ -17,6 +18,8 @@ import java.io.FileNotFoundException;
 import java.util.List;
 
 import se.simonekdahl.mymaps.dao.MapObject;
+
+import static androidx.core.content.ContextCompat.startActivity;
 
 
 /**
@@ -72,6 +75,16 @@ public class CustomAdapter extends BaseAdapter {
         name.setText(map.getName());
         description.setText(map.getDescription());
         photo.setImageBitmap(mapImage);
+
+        view.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent = new Intent(context, MapDetails.class);
+                intent.putExtra("MAP", map);
+                startActivity(context, intent, null);
+            }
+        });
+
 
         return view;
     }

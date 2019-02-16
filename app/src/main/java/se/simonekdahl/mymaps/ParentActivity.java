@@ -3,6 +3,7 @@ package se.simonekdahl.mymaps;
 import android.app.Activity;
 import android.content.Context;
 import android.content.ContextWrapper;
+import android.database.sqlite.SQLiteDatabase;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 
@@ -27,11 +28,14 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 
+
 public class ParentActivity extends AppCompatActivity{
 
     private static final String TAG = "ParentActivity";
     private String FILE_NAME = "";
     private DaoSession daoSession;
+    private  Database db;
+    private SQLiteDatabase sqlDatabase;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -41,7 +45,8 @@ public class ParentActivity extends AppCompatActivity{
 
         // regular SQLite database
         DaoMaster.DevOpenHelper helper = new DaoMaster.DevOpenHelper(this, "notes-db");
-        Database db = helper.getWritableDb();
+        db = helper.getWritableDb();
+        sqlDatabase = helper.getWritableDatabase();
 
         // encrypted SQLCipher database
         // note: you need to add SQLCipher to your dependencies, check the build.gradle file
@@ -54,6 +59,14 @@ public class ParentActivity extends AppCompatActivity{
 
     public DaoSession getDaoSession() {
         return daoSession;
+    }
+
+    public Database getDb(){
+        return db;
+    }
+
+    public SQLiteDatabase getSqlDatabase(){
+        return sqlDatabase;
     }
 
     /**

@@ -68,27 +68,17 @@ public class MapDetails extends ParentActivity {
         Log.d(TAG, "onCreate: extras == ");
 
         ImageView mMapimage = findViewById(R.id.map_image_view_in_details);
+        mMapimage.setImageBitmap(loadImageFromStorage(map.getFilePath(), map.getBitmapName()));
 
-        if (extras.getString("MAP_IMAGE_FILEPATH") != null &&
-                extras.getString("MAP_IMAGE_NAME") != null) {
-            mMapimage.setImageBitmap(loadImageFromStorage(extras.getString("MAP_IMAGE_FILEPATH")
-                    , extras.getString("MAP_IMAGE_NAME")));
-        }
         mMapname = findViewById(R.id.textView_insert_mapname);
+        mMapname.setText(map.getName());
 
-        if (extras.getString("MAP_NAME") != null) {
-            mMapname.setText(extras.getString("MAP_NAME"));
-        }
 
         mMapDesc = findViewById(R.id.textView_insert_desc);
+        mMapDesc.setText(map.getDescription());
 
-        if (extras.getString("MAP_DESC") != null) {
-            mMapDesc.setText(extras.getString("MAP_DESC"));
-        }
         TextView mOther = findViewById(R.id.textView_otherinfo_insert);
-
-        int id = extras.getInt("MAP_ID", 0);
-        mOther.setText(String.valueOf(id));
+        mOther.setText(String.valueOf(map.getId()));
 
         Button btn_goto = findViewById(R.id.button_go_to_map);
         assert btn_goto != null;
