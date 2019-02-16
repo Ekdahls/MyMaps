@@ -16,6 +16,7 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.util.List;
 
+import se.simonekdahl.mymaps.dao.MapObject;
 
 
 /**
@@ -24,11 +25,11 @@ import java.util.List;
  */
 public class CustomAdapter extends BaseAdapter {
 
-    private List<MapObject1> items;
+    private List<MapObject> items;
     private Context context;
     private LayoutInflater inflater;
 
-    public CustomAdapter(Context _context, List<MapObject1> _items){
+    public CustomAdapter(Context _context, List<MapObject> _items){
         inflater = LayoutInflater.from(_context);
         this.items = _items;
         this.context = _context;
@@ -53,23 +54,23 @@ public class CustomAdapter extends BaseAdapter {
     @Override
     public View getView(int position, View convertView, ViewGroup parent) {
 
-        MapObject1 map = items.get(position);
+        MapObject map = items.get(position);
         View view = convertView;
 
         if(view == null)
             view = inflater.inflate(R.layout.map_item, null);
 
-        TextView name = (TextView) view.findViewById(R.id.tv_map_name);
-        TextView description = (TextView) view.findViewById(R.id.tv_map_desc);
-        ImageView photo = (ImageView) view.findViewById(R.id.list_image);
-        Bitmap mapImage = loadImageFromStorage(map.get_filePath(), map.get_id());
+        TextView name = view.findViewById(R.id.tv_map_name);
+        TextView description = view.findViewById(R.id.tv_map_desc);
+        ImageView photo = view.findViewById(R.id.list_image);
+        Bitmap mapImage = loadImageFromStorage(map.getFilePath(), map.getId());
 
         if(mapImage!=null) {
             mapImage = cropCenter(mapImage);
         }
 
-        name.setText(map.get_mapName());
-        description.setText(map.get_mapDescription());
+        name.setText(map.getName());
+        description.setText(map.getDescription());
         photo.setImageBitmap(mapImage);
 
         return view;

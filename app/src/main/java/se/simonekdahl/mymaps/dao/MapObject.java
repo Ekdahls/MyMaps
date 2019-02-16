@@ -1,5 +1,8 @@
 package se.simonekdahl.mymaps.dao;
 
+import android.os.Parcel;
+import android.os.Parcelable;
+
 import org.greenrobot.greendao.annotation.Entity;
 import org.greenrobot.greendao.annotation.Id;
 import org.greenrobot.greendao.annotation.NotNull;
@@ -17,7 +20,7 @@ import org.greenrobot.greendao.DaoException;
         // Whether getters and setters for properties should be generated if missing.
         generateGettersSetters = true
 )
-public class MapObject {
+public class MapObject implements Parcelable {
 
 
     @Id(autoincrement = true)
@@ -51,7 +54,7 @@ public class MapObject {
 
     @Generated(hash = 755981821)
     public MapObject(Long id, @NotNull String name, String bitmapName, String filePath,
-            double tiePointOne, double tiePointTwo, double rotation, double size, String description) {
+                     double tiePointOne, double tiePointTwo, double rotation, double size, String description) {
         this.id = id;
         this.name = name;
         this.bitmapName = bitmapName;
@@ -198,6 +201,37 @@ public class MapObject {
     }
 
 
+    protected MapObject(Parcel in) {
+        id = in.readLong();
+        name = in.readString();
+        bitmapName = in.readString();
+        filePath = in.readString();
+        tiePointOne = in.readDouble();
+        tiePointTwo = in.readDouble();
+        rotation = in.readDouble();
+        size = in.readDouble();
+        description = in.readString();
+    }
+
+    @Override
+    public int describeContents() {
+        return 0;
+    }
+
+    @Override
+    public void writeToParcel(Parcel dest, int flags) {
+        dest.writeLong(id);
+        dest.writeString(name);
+        dest.writeString(bitmapName);
+        dest.writeString(filePath);
+        dest.writeDouble(tiePointOne);
+        dest.writeDouble(tiePointTwo);
+        dest.writeDouble(rotation);
+        dest.writeDouble(size);
+        dest.writeString(description);
+    }
+
+
     /** called by internal mechanisms, do not call yourself. */
     @Generated(hash = 788755102)
     public void __setDaoSession(DaoSession daoSession) {
@@ -205,5 +239,16 @@ public class MapObject {
         myDao = daoSession != null ? daoSession.getMapObjectDao() : null;
     }
 
+    @SuppressWarnings("unused")
+    public static final Parcelable.Creator<MapObject> CREATOR = new Parcelable.Creator<MapObject>() {
+        @Override
+        public MapObject createFromParcel(Parcel in) {
+            return new MapObject(in);
+        }
 
+        @Override
+        public MapObject[] newArray(int size) {
+            return new MapObject[size];
+        }
+    };
 }

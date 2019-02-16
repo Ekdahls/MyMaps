@@ -81,7 +81,6 @@ public class MainActivity extends ParentActivity
 
     private static final String TAG = "MainActivity";
     private LocationManager locationManager;
-    private DBHandler handler;
     List<MapObject> mapObjects;
     GoogleMap mMap;
     LinearLayout llBottomSheet;
@@ -91,7 +90,7 @@ public class MainActivity extends ParentActivity
 
     private Marker latestMarker;
 
-    private HashMap<Marker, MapObject1> mapMarkerMap;
+    private HashMap<Marker, MapObject> mapMarkerMap;
 
     TextView loadingIndicator;
 
@@ -107,15 +106,16 @@ public class MainActivity extends ParentActivity
 
         this.savedInstanceState = savedInstanceState;
 
+        locationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
 
         if (servicesOK()) {
 
             //initiate UI
             setContentView(R.layout.nav_drawer_main);
-            Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+            Toolbar toolbar = findViewById(R.id.toolbar);
             setSupportActionBar(toolbar);
 
-            FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
+            FloatingActionButton fab = findViewById(R.id.fab);
 
             assert fab != null;
             fab.setOnClickListener(new View.OnClickListener() {
@@ -134,14 +134,14 @@ public class MainActivity extends ParentActivity
                 }
             });
 
-            DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
+            DrawerLayout drawer = findViewById(R.id.drawer_layout);
             ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
                     this, drawer, toolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close);
             assert drawer != null;
             drawer.addDrawerListener(toggle);
             toggle.syncState();
 
-            NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
+            NavigationView navigationView = findViewById(R.id.nav_view);
             assert navigationView != null;
             navigationView.setNavigationItemSelectedListener(this);
 
@@ -233,7 +233,7 @@ public class MainActivity extends ParentActivity
 
     @Override
     public void onBackPressed() {
-        DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
+        DrawerLayout drawer = findViewById(R.id.drawer_layout);
         assert drawer != null;
         if (drawer.isDrawerOpen(GravityCompat.START)) {
             drawer.closeDrawer(GravityCompat.START);
@@ -476,7 +476,7 @@ public class MainActivity extends ParentActivity
 
         }
 
-        DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
+        DrawerLayout drawer = findViewById(R.id.drawer_layout);
         assert drawer != null;
         drawer.closeDrawer(GravityCompat.START);
         return true;
@@ -538,7 +538,6 @@ public class MainActivity extends ParentActivity
 
             }
         }
-        handler.close();
     }
 
     @Override
@@ -623,99 +622,6 @@ public class MainActivity extends ParentActivity
         } else if (savedInstanceState == null) {
             loadGroundOverlayData();
         }
-
-
-
-
-        /*
-
-        enableGPS();
-
-        setInfoWindow();
-
-
-
-        Toast.makeText(this, R.string.ready_to_map, Toast.LENGTH_SHORT).show();
-
-        if (getIntent().getDoubleExtra("MAP_LATITUDE", 0) > 0 && getIntent().getDoubleExtra("MAP_LONGITUDE", 0) > 0) {
-
-            gotoLocation(getIntent().getDoubleExtra("MAP_LATITUDE", 0), getIntent().getDoubleExtra("MAP_LONGITUDE", 0), 12);
-            //Reset the intent
-            getIntent().putExtra("MAP_LATITUDE", 0);
-            getIntent().putExtra("MAP_LONGITUDE", 0);
-
-
-            //If the app is opened for the first time the instacestate is null.
-            //Move the camera to users position, fairly zoomed out.
-        } else if (savedInstanceState == null) {
-
-
-
-
-
-
-
-            // Get Current Location
-            //Needs to have this check
-            if (ActivityCompat.checkSelfPermission(this,
-                    Manifest.permission.ACCESS_FINE_LOCATION)
-                    != PackageManager.PERMISSION_GRANTED) {
-
-
-                ActivityCompat.requestPermissions(this, new String[]
-                                {Manifest.permission.ACCESS_FINE_LOCATION},
-                        PERMISSION_ACCESS_FINE_LOCATION);
-            }
-
-            // Get LocationManager object from System Service LOCATION_SERVICE
-            final LocationManager locationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
-
-            // Create a criteria object to retrieve provider
-            Criteria criteria = new Criteria();
-
-            // Get the name of the best provider
-            String provider = locationManager.getBestProvider(criteria, true);
-
-            locationManager.requestLocationUpdates(provider, 0, 0, new LocationListener() {
-                @Override
-                public void onLocationChanged(Location location) {
-                    // Get latitude of the current location
-                    double latitude = location.getLatitude();
-
-                    // Get longitude of the current location
-                    double longitude = location.getLongitude();
-
-                    gotoLocation(latitude, longitude, 7);
-
-                    locationManager.removeUpdates(this);
-
-                    loadingIndicator = findViewById(R.id.loading_indicator);
-
-                    loadingIndicator.setVisibility(View.GONE);
-                }
-
-                @Override
-                public void onStatusChanged(String provider, int status, Bundle extras) {
-
-                }
-
-                @Override
-                public void onProviderEnabled(String provider) {
-
-                }
-
-                @Override
-                public void onProviderDisabled(String provider) {
-
-                }
-            });
-        }
-
-        handler = new DBHandler(this);
-        //Load all groundoverlays to map.
-        loadGroundOverlayData();
-
-    */
 
     }
 
@@ -813,10 +719,10 @@ public class MainActivity extends ParentActivity
                 LatLng latLng = marker.getPosition();
 
                 // Getting reference to the TextView to set latitude
-                TextView tvLat = (TextView) v.findViewById(R.id.tv_lat);
+                TextView tvLat = v.findViewById(R.id.tv_lat);
 
                 // Getting reference to the TextView to set longitude
-                TextView tvLng = (TextView) v.findViewById(R.id.tv_lng);
+                TextView tvLng = v.findViewById(R.id.tv_lng);
 
                 // Setting the latitude
                 tvLat.setText("Latitude:" + latLng.latitude);

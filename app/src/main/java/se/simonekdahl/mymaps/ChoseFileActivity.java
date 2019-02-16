@@ -52,9 +52,6 @@ public class ChoseFileActivity extends ParentActivity {
 
     private MapObjectDao mapObjectDao;
 
-    //Databasehandler
-    DBHandler dbHandler;
-
     private MapObjectDao getMapObjectDao(){
         if(mapObjectDao == null){
             mapObjectDao = getDaoSession().getMapObjectDao();
@@ -69,26 +66,25 @@ public class ChoseFileActivity extends ParentActivity {
 
         //initiate UI
         setContentView(R.layout.activity_chose_file);
-        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+        Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
         getSupportActionBar().setDisplayShowHomeEnabled(true);
 
-        imgPicture = (ImageView) findViewById(R.id.imageView_mapImage);
-        mMapNameTextView = (EditText) findViewById(R.id.editText_mapName);
-        mMapDescriptionTextView = (EditText) findViewById(R.id.editText_mapDescription);
+        imgPicture = findViewById(R.id.imageView_mapImage);
+        mMapNameTextView = findViewById(R.id.editText_mapName);
+        mMapDescriptionTextView = findViewById(R.id.editText_mapDescription);
         mMapDescriptionTextView.setScroller(new Scroller(this));
         mMapDescriptionTextView.setMaxLines(NO_OF_LINES_IN_DESCRIPTION);
         mMapDescriptionTextView.setVerticalScrollBarEnabled(true);
         mMapDescriptionTextView.setMovementMethod(new ScrollingMovementMethod());
 
-        mAddImageButton = (Button) findViewById(R.id.button_choose_image);
-        mPlaceImageButton = (Button) findViewById(R.id.button_place_map);
+        mAddImageButton = findViewById(R.id.button_choose_image);
+        mPlaceImageButton = findViewById(R.id.button_place_map);
 
         assert mPlaceImageButton != null;
         mPlaceImageButton.setAlpha(.2f);
         disablePlaceButton();
-        dbHandler = new DBHandler(this,null,null,1);
     }
 
 

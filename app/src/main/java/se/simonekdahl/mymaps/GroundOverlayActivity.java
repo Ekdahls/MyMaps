@@ -22,6 +22,9 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import androidx.appcompat.widget.SearchView;
+import se.simonekdahl.mymaps.dao.MapObject;
+import se.simonekdahl.mymaps.dao.MapObjectDao;
+
 import android.view.inputmethod.InputMethodManager;
 import android.widget.Button;
 import android.widget.ImageView;
@@ -76,7 +79,6 @@ public class GroundOverlayActivity extends ParentActivity
     private static final String TAG = "GroundOverlayActivity";
 
     GoogleMap mMap;
-    DBHandler dbHandler;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -93,26 +95,26 @@ public class GroundOverlayActivity extends ParentActivity
         setContentView(R.layout.activity_add_overlay);
         mapFile = drawDotOnMapCenter(mapFile);
         imgPicture = new ImageView(this);
-        imgPicture = (ImageView) findViewById(R.id.imageMapView);
+        imgPicture = findViewById(R.id.imageMapView);
 
-        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+        Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
         getSupportActionBar().setDisplayShowHomeEnabled(true);
         displayImageView();
 
-        mTransparencyBar = (SeekBar) findViewById(R.id.transparencySeekBar);
+        mTransparencyBar = findViewById(R.id.transparencySeekBar);
         assert mTransparencyBar != null;
         mTransparencyBar.setMax(TRANSPARENCY_MAX);
         mTransparencyBar.setProgress(TRANSPARENCY_MAX / 2);
         imgPicture.setAlpha(0.5f);
 
-        mSizeBar = (SeekBar) findViewById(R.id.sizeSeekBar);
+        mSizeBar = findViewById(R.id.sizeSeekBar);
         assert mSizeBar != null;
         mSizeBar.setMax(SIZE_MAX);
         mSizeBar.setProgress(SIZE_MAX);
 
-        mRotationBar = (SeekBar) findViewById(R.id.rotaionSeekBar);
+        mRotationBar = findViewById(R.id.rotaionSeekBar);
         assert mRotationBar != null;
         mRotationBar.setMax(ROTAION_MAX);
         mRotationBar.setProgress(0);
@@ -121,7 +123,7 @@ public class GroundOverlayActivity extends ParentActivity
         mSizeBar.setOnSeekBarChangeListener(this);
         mTransparencyBar.setOnSeekBarChangeListener(this);
 
-        mPlaceMapBtn =  (Button) findViewById(R.id.saveImage_btn);
+        mPlaceMapBtn = findViewById(R.id.saveImage_btn);
         mPlaceMapBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -255,12 +257,27 @@ public class GroundOverlayActivity extends ParentActivity
 
         }else{
 
+            MapObjectDao mapObjectDao = getDaoSession().getMapObjectDao();
+
             //User saved overlay, update database accordingly
-            dbHandler = new DBHandler(this,null,null,1);
             long mapId = getIntent().getLongExtra("MAP_IMAGE_ID", 0);
-            dbHandler.addAnchorsToMap(mapId, mapOverlay.getLatitude(), mapOverlay.getLongitude());
-            dbHandler.addWidthAndBearingToMap(mapId,mapOverlay.getWidth(), mapOverlay.getBearing());
-            dbHandler.close();
+
+            MapObject map = mapObjectDao.load(mapId);
+
+            if(map != null){
+                map.setTiePointOne(mapOverlay.getLatitude());
+                map.setTiePointTwo(mapOverlay.getLongitude());
+
+                map.setSize(mapOverlay.getWidth());
+                map.setRotation(mapOverlay.getBearing());
+
+
+                mapObjectDao.update(map);
+            }else{
+
+            }
+
+
             //Finish activity.
             setResult(Activity.RESULT_OK);
             finish();

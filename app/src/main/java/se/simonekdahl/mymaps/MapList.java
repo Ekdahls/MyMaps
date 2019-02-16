@@ -4,6 +4,9 @@ import android.content.Intent;
 import android.os.Bundle;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import androidx.appcompat.widget.Toolbar;
+import se.simonekdahl.mymaps.dao.MapObject;
+import se.simonekdahl.mymaps.dao.MapObjectDao;
+
 import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
@@ -16,21 +19,30 @@ import java.util.List;
 public class MapList extends ParentActivity {
 
     private static final String TAG = "MapList";
-    private DBHandler handler;
-    List<MapObject1> mapObjects;
+    List<MapObject> mapObjects;
     ListView lv;
+
+    private MapObjectDao mapObjectDao;
+
+    private MapObjectDao getMapObjectDao(){
+        if(mapObjectDao == null){
+            mapObjectDao = getDaoSession().getMapObjectDao();
+        }
+
+        return mapObjectDao;
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_map_list);
 
-        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar_map_list);
+        Toolbar toolbar = findViewById(R.id.toolbar_map_list);
         setSupportActionBar(toolbar);
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
         getSupportActionBar().setDisplayShowHomeEnabled(true);
 
-        FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
+        FloatingActionButton fab = findViewById(R.id.fab);
 
         assert fab != null;
         fab.setOnClickListener(new View.OnClickListener() {
@@ -46,34 +58,21 @@ public class MapList extends ParentActivity {
             }
         });
 
-        handler = new DBHandler(this);
-
-        lv = (ListView) findViewById(R.id.lv_maps_list);
+        lv = findViewById(R.id.lv_maps_list);
         lv.setOnItemClickListener(new AdapterView.OnItemClickListener() {
 
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position,
                                     long id) {
                 Intent intent = new Intent(MapList.this, MapDetails.class);
-
                 intent.putExtra("MAP", mapObjects.get(position));
-
-                intent.putExtra("MAP_ID", mapObjects.get(position).get_id());
-                intent.putExtra("MAP_NAME", mapObjects.get(position).get_mapName());
-                intent.putExtra("MAP_DESC", mapObjects.get(position).get_mapDescription());
-                intent.putExtra("MAP_IMAGE_NAME", mapObjects.get(position).get_bitmapName());
-                intent.putExtra("MAP_IMAGE_FILEPATH", mapObjects.get(position).get_filePath());
-                intent.putExtra("MAP_TIEPOINT_ONE", mapObjects.get(position).get_tiePointOne());
-                intent.putExtra("MAP_TIEPOINT_TWO", mapObjects.get(position).get_tiePointTwo());
-                intent.putExtra("MAP_ROTATION", mapObjects.get(position).get_Rotation());
-                intent.putExtra("MAP_SIZE", mapObjects.get(position).get_Size());
                 startActivity(intent);
             }
 
         });
 
 
-                loadContactData();
+        loadContactData();
 
 
 
@@ -89,7 +88,7 @@ public class MapList extends ParentActivity {
         // Code for loading contact list in ListView
         // Reading all contacts
 
-        mapObjects = handler.readAllMaps();
+        mapObjects = getMapObjectDao().loadAll();
 
         // Initialize Custom Adapter
         CustomAdapter adapter = new CustomAdapter(this, mapObjects);
@@ -98,9 +97,9 @@ public class MapList extends ParentActivity {
         lv.setAdapter(adapter);
 
 
-        for(MapObject1 m : mapObjects){
-            String record = "ID=" + m.get_id() + " | Name=" + m.get_mapName() + " | " + m.get_mapDescription() +
-                    " Filepath = " + m.get_filePath() + " Filnamet är " + m.get_bitmapName();
+        for(MapObject m : mapObjects){
+            String record = "ID=" + m.getId() + " | Name=" + m.getName() + " | " + m.getDescription() +
+                    " Filepath = " + m.getFilePath() + " Filnamet är " + m.getBitmapName();
 
             Log.d(TAG, "RECORDDATA =__________ : " + record);
         }

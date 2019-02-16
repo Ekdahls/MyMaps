@@ -8,6 +8,9 @@ import android.graphics.BitmapFactory;
 import android.os.Bundle;
 
 import androidx.appcompat.widget.Toolbar;
+import se.simonekdahl.mymaps.dao.MapObject;
+import se.simonekdahl.mymaps.dao.MapObjectDao;
+
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -30,58 +33,64 @@ public class MapDetails extends ParentActivity {
 
     private static final String TAG = "MapDetails";
 
-    private DBHandler handler;
-
-    MapObject1 map;
+    MapObject map;
     EditText mMapname;
     EditText mMapDesc;
 
+    MapObjectDao mapObjectDao;
+
+
+    private MapObjectDao getMapObjectDao(){
+        if(mapObjectDao == null){
+            mapObjectDao = getDaoSession().getMapObjectDao();
+        }
+
+        return mapObjectDao;
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.map_details);
 
-        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar_map_details);
+        Toolbar toolbar = findViewById(R.id.toolbar_map_details);
         setSupportActionBar(toolbar);
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
         getSupportActionBar().setDisplayShowHomeEnabled(true);
-        handler = new DBHandler(this);
 
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
         getSupportActionBar().setDisplayShowHomeEnabled(true);
 
         final Bundle extras = getIntent().getExtras();
 
-
         map = extras.getParcelable("MAP");
 
         Log.d(TAG, "onCreate: extras == ");
 
-        ImageView mMapimage = (ImageView) findViewById(R.id.map_image_view_in_details);
+        ImageView mMapimage = findViewById(R.id.map_image_view_in_details);
 
         if (extras.getString("MAP_IMAGE_FILEPATH") != null &&
                 extras.getString("MAP_IMAGE_NAME") != null) {
             mMapimage.setImageBitmap(loadImageFromStorage(extras.getString("MAP_IMAGE_FILEPATH")
                     , extras.getString("MAP_IMAGE_NAME")));
         }
-        mMapname = (EditText) findViewById(R.id.textView_insert_mapname);
+        mMapname = findViewById(R.id.textView_insert_mapname);
 
         if (extras.getString("MAP_NAME") != null) {
             mMapname.setText(extras.getString("MAP_NAME"));
         }
 
-        mMapDesc = (EditText) findViewById(R.id.textView_insert_desc);
+        mMapDesc = findViewById(R.id.textView_insert_desc);
 
         if (extras.getString("MAP_DESC") != null) {
             mMapDesc.setText(extras.getString("MAP_DESC"));
         }
-        TextView mOther = (TextView) findViewById(R.id.textView_otherinfo_insert);
+        TextView mOther = findViewById(R.id.textView_otherinfo_insert);
 
         int id = extras.getInt("MAP_ID", 0);
         mOther.setText(String.valueOf(id));
 
-        Button btn_goto = (Button) findViewById(R.id.button_go_to_map);
+        Button btn_goto = findViewById(R.id.button_go_to_map);
         assert btn_goto != null;
         btn_goto.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -99,7 +108,7 @@ public class MapDetails extends ParentActivity {
             }
         });
 
-        Button deleteMapButton = (Button) findViewById(R.id.btn_delete_map_object);
+        Button deleteMapButton = findViewById(R.id.btn_delete_map_object);
         assert deleteMapButton != null;
         deleteMapButton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -113,7 +122,7 @@ public class MapDetails extends ParentActivity {
 
                             public void onClick(DialogInterface dialog, int whichButton) {
                                 Toast.makeText(getBaseContext(), R.string.Map_deleted, Toast.LENGTH_SHORT).show();
-                                handler.deleteMap(map);
+                                getMapObjectDao().delete(map);
                                 finish();
                             }
                         })
@@ -169,9 +178,11 @@ public class MapDetails extends ParentActivity {
         //Add menu handling code
         switch (id) {
             case R.id.save:
-                map.set_mapName(mMapname.getText().toString());
-                map.set_mapDescription((mMapDesc.getText().toString()));
-                handler.updateMap(map);
+                map.setName(mMapname.getText().toString());
+                map.setDescription(mMapDesc.getText().toString());
+
+                getMapObjectDao().update(map);
+
                 Toast.makeText(getBaseContext(), R.string.saved_map, Toast.LENGTH_SHORT).show();
                 break;
             case R.id.home:
