@@ -1,6 +1,7 @@
 package se.simonekdahl.mymaps.dao;
 
 
+import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
 
@@ -136,6 +137,9 @@ public class MarkerObject implements Comparable<MarkerObject> {
 
         // Setting position on the MarkerOptions
         markerOptions.position(new LatLng(getLatitude(), getLongitude()));
+
+        markerOptions .icon(BitmapDescriptorFactory
+                .defaultMarker(BitmapDescriptorFactory.HUE_GREEN));
 
         return markerOptions;
     }

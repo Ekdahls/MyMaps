@@ -16,6 +16,7 @@ import android.widget.EditText;
 import android.widget.TextView;
 
 import androidx.coordinatorlayout.widget.CoordinatorLayout;
+import androidx.lifecycle.ViewModelProviders;
 import se.simonekdahl.mymaps.App;
 import se.simonekdahl.mymaps.MarkerViewModel;
 import se.simonekdahl.mymaps.R;
@@ -24,21 +25,18 @@ import se.simonekdahl.mymaps.dao.MarkerObject;
 public class MapObjectBottomSheetDialogFragment extends BottomSheetDialogFragment {
 
 
-    EditText title;
-    TextView textView1;
-    TextView textView2;
-    Button saveButton;
-
-    MarkerViewModel model;
-
-    Marker marker;
-    private OnMarkerSaveListener listener;
+    private EditText title;
+    private TextView textView1;
+    private TextView textView2;
+    private Button saveButton;
+    private Button deleteButton;
 
     public static MapObjectBottomSheetDialogFragment newInstance(MarkerObject mo) {
         MapObjectBottomSheetDialogFragment fragment = new MapObjectBottomSheetDialogFragment();
 
         Bundle args = new Bundle();
 
+        args.putLong("ID", mo.getId());
         args.putDouble("LAT", mo.getLatitude());
         args.putDouble("LONG", mo.getLongitude());
         args.putString("TITLE", mo.getName());
@@ -48,16 +46,13 @@ public class MapObjectBottomSheetDialogFragment extends BottomSheetDialogFragmen
         return fragment;
     }
 
-    public abstract interface OnMarkerSaveListener {
-        public void onMarkerSave();
-    }
-
     public static MapObjectBottomSheetDialogFragment newInstance(Marker marker) {
 
         MapObjectBottomSheetDialogFragment fragment = new MapObjectBottomSheetDialogFragment();
 
         Bundle args = new Bundle();
 
+        args.putLong("ID", -1);
         args.putDouble("LAT", marker.getPosition().latitude);
         args.putDouble("LONG", marker.getPosition().longitude);
         args.putString("TITLE", "");
@@ -65,10 +60,6 @@ public class MapObjectBottomSheetDialogFragment extends BottomSheetDialogFragmen
         fragment.setArguments(args);
 
         return fragment;
-    }
-
-    public void setOnSaveListener(OnMarkerSaveListener listener){
-        this.listener = listener;
     }
 
     @Override
@@ -108,14 +99,24 @@ public class MapObjectBottomSheetDialogFragment extends BottomSheetDialogFragmen
         textView1 = view.findViewById(R.id.marker_lat);
         textView2 = view.findViewById(R.id.marker_long);
         saveButton = view.findViewById(R.id.save_marker_button);
+        deleteButton = view.findViewById(R.id.delete_marker_button);
 
+        assert getArguments() != null;
+
+        long id = getArguments().getLong("ID");
         double lat = getArguments().getDouble("LAT");
         double longitude = getArguments().getDouble("LONG");
         String titleText = getArguments().getString("TITLE");
 
+        if(id == -1){
+            deleteButton.setVisibility(View.GONE);
+        }
+
         title.setText(titleText);
         textView1.setText(String.valueOf(lat));
         textView2.setText(String.valueOf(longitude));
+
+        MarkerViewModel model = ViewModelProviders.of(getActivity()).get(MarkerViewModel.class);
 
 
         saveButton.setOnClickListener(v -> {
@@ -125,8 +126,13 @@ public class MapObjectBottomSheetDialogFragment extends BottomSheetDialogFragmen
             m.setLatitude(lat);
             m.setLongitude(longitude);
 
-            ((App)getActivity().getApplication()).getDaoSession().getMarkerObjectDao().save(m);
-            listener.onMarkerSave();
+           model.addMarkerObject(m);
+            this.dismiss();
+        });
+
+        deleteButton.setOnClickListener(v -> {
+            model.deleteMarkerObject(id);
+            this.dismiss();
         });
 
 

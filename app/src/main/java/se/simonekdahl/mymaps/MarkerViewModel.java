@@ -62,7 +62,7 @@ public class MarkerViewModel extends AndroidViewModel {
 
 
     public void getLatest() {
-        loadMarkerObjects();
+        getMarkerObjectList();
     }
 
     public MarkerObject getMarkerObjectFromMarker(Marker marker) {
@@ -76,4 +76,35 @@ public class MarkerViewModel extends AndroidViewModel {
 
         return null;
     }
+
+    public void deleteMarkerObject(MarkerObject markerObject) {
+
+        DaoSession daoSession = ((App)getApplication()).getDaoSession();
+        daoSession.getMarkerObjectDao().delete(markerObject);
+
+
+        loadMarkerObjects();
+    }
+
+    public void deleteMarkerObject(Long id) {
+
+        DaoSession daoSession = ((App)getApplication()).getDaoSession();
+        daoSession.getMarkerObjectDao().deleteByKey(id);
+
+
+        loadMarkerObjects();
+
+
+    }
+
+    public void addMarkerObject(MarkerObject markerObject) {
+
+        DaoSession daoSession = ((App)getApplication()).getDaoSession();
+        daoSession.getMarkerObjectDao().save(markerObject);
+
+        loadMarkerObjects();
+
+
+    }
+
 }

@@ -57,9 +57,11 @@ import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
+import androidx.lifecycle.Observer;
 import androidx.lifecycle.ViewModelProviders;
 import se.simonekdahl.mymaps.bottomsheet.MapObjectBottomSheetDialogFragment;
 import se.simonekdahl.mymaps.dao.MapObject;
@@ -100,6 +102,7 @@ public class MainActivity extends ParentActivity
 
     private static final long MIN_TIME = 400;
     private static final float MIN_DISTANCE = 1000;
+    private ArrayList<Marker> currentMarkers;
 
 
     @Override
@@ -509,8 +512,6 @@ public class MainActivity extends ParentActivity
                     f = MapObjectBottomSheetDialogFragment.newInstance(marker);
                 }
 
-
-                f.setOnSaveListener(() -> model.getLatest());
                 f.show(getSupportFragmentManager(), "add_photo_dialog_fragment");
             }
 
@@ -533,15 +534,27 @@ public class MainActivity extends ParentActivity
         mMap.setOnMapLongClickListener(this);
         mMap.setOnMarkerClickListener(this);
 
+
         model.getMarkerObjectList().observe(this, markerObjectList -> {
-            for(MarkerObject marker : markerObjectList){
-                mMap.addMarker(marker.getMarkerOptions());
+
+            ArrayList<Marker> a = getCurrentMarkers();
+
+            for(Marker m : a){
+                m.remove();
             }
+
+            a.clear();
+
+            for(MarkerObject marker : markerObjectList){
+                a.add(mMap.addMarker(marker.getMarkerOptions()));
+            }
+
+            setCurrentMarkers(a);
         });
 
         enableMyLocation();
 
-        initialZoom();
+        //initialZoom();
 
         if (getIntent().getDoubleExtra("MAP_LATITUDE", 0) > 0 && getIntent().getDoubleExtra("MAP_LONGITUDE", 0) > 0) {
 
@@ -557,6 +570,17 @@ public class MainActivity extends ParentActivity
             loadGroundOverlayData();
         }
 
+    }
+
+    private void setCurrentMarkers(ArrayList<Marker> markers) {
+        this.currentMarkers = markers;
+    }
+
+    private ArrayList<Marker> getCurrentMarkers() {
+        if(currentMarkers == null)
+            currentMarkers = new ArrayList<>();
+
+        return currentMarkers;
     }
 
     @Override
@@ -588,6 +612,7 @@ public class MainActivity extends ParentActivity
         } else if (mMap != null) {
             // Access to the location has been granted to the app.
             mMap.setMyLocationEnabled(true);
+            initialZoom();
         }
     }
 
@@ -675,6 +700,11 @@ public class MainActivity extends ParentActivity
     public boolean onMarkerClick(Marker marker) {
 
         MarkerObject mo = model.getMarkerObjectFromMarker(marker);
+
+        if (latestMarker != null && marker != latestMarker) {
+            latestMarker.remove();
+            latestMarker = null;
+        }
 
         showMarker(marker, mo);
 
