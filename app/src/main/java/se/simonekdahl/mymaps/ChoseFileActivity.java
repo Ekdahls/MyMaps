@@ -33,6 +33,9 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 
+import static se.simonekdahl.mymaps.utils.MapImageUtils.getFileNameByUri;
+import static se.simonekdahl.mymaps.utils.MapImageUtils.saveToInternalStorage;
+
 public class ChoseFileActivity extends ParentActivity {
 
     private EditText mMapNameTextView, mMapDescriptionTextView;
@@ -54,7 +57,7 @@ public class ChoseFileActivity extends ParentActivity {
 
     private MapObjectDao getMapObjectDao(){
         if(mapObjectDao == null){
-            mapObjectDao = getDaoSession().getMapObjectDao();
+            mapObjectDao = ((App)getApplication()).getDaoSession().getMapObjectDao();
         }
 
         return mapObjectDao;
@@ -141,7 +144,7 @@ public class ChoseFileActivity extends ParentActivity {
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu; this adds items to the action bar if it is present.
         MenuInflater inflater = getMenuInflater();
-        inflater.inflate(R.menu.menu_save, menu);
+        inflater.inflate(R.menu.menu_blank, menu);
         return true;
 
     }
@@ -229,7 +232,7 @@ public class ChoseFileActivity extends ParentActivity {
         getMapObjectDao().save(mapObject);
 
         String fileName = String.valueOf(id);
-        String filePath = saveToInternalStorage(bitmap, fileName);
+        String filePath = saveToInternalStorage(bitmap, fileName, getApplicationContext());
 
         mapObject.setFilePath(filePath);
 
@@ -237,40 +240,6 @@ public class ChoseFileActivity extends ParentActivity {
 
         return id;
 
-    }
-
-
-    //function to get filename from imagefile uRI
-    public static String getFileNameByUri(Context context, Uri uri)
-    {
-        String fileName="unknown";//default fileName
-        Uri filePathUri = uri;
-
-        if (uri!=null && uri.getScheme().compareTo("content")==0)
-        {
-            Cursor cursor = context.getContentResolver().query(uri, null, null, null, null);
-            assert cursor != null;
-            if (cursor.moveToFirst())
-            {
-                int column_index = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DATA);
-                //Instead of "MediaStore.Images.Media.DATA" can be used "_data"
-                filePathUri = Uri.parse(cursor.getString(column_index));
-                fileName = filePathUri.getLastPathSegment();
-                cursor.close();
-            }
-        }
-        else {
-            assert uri != null;
-            if (uri.getScheme().compareTo("file")==0)
-            {
-                fileName = filePathUri.getLastPathSegment();
-            }
-            else
-            {
-                fileName = fileName+"_"+filePathUri.getLastPathSegment();
-            }
-        }
-        return fileName;
     }
 
     //Options to select map-type

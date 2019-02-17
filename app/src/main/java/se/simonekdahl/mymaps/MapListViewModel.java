@@ -45,9 +45,7 @@ public class MapListViewModel extends AndroidViewModel {
 
         myHandler.post(() -> {
 
-            DaoMaster.DevOpenHelper helper = new DaoMaster.DevOpenHelper(getApplication(), "notes-db");
-            Database db = helper.getWritableDb();
-            DaoSession daoSession = new DaoMaster(db).newSession();
+            DaoSession daoSession = ((App)getApplication()).getDaoSession();
             List<MapObject> mapObjectList1 = daoSession.getMapObjectDao().queryBuilder().list();
 
             Collections.sort(mapObjectList1);

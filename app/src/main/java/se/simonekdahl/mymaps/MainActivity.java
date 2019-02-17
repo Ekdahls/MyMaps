@@ -3,8 +3,6 @@ package se.simonekdahl.mymaps;
 import android.Manifest;
 import android.app.AlertDialog;
 import android.app.Dialog;
-import android.content.Context;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
@@ -17,7 +15,6 @@ import android.location.LocationManager;
 import android.os.PersistableBundle;
 import android.provider.Settings;
 
-import com.google.android.gms.maps.LocationSource;
 import com.google.android.gms.maps.model.CameraPosition;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.navigation.NavigationView;
@@ -45,7 +42,6 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.google.android.gms.appindexing.AppIndex;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GooglePlayServicesUtil;
 import com.google.android.gms.common.api.GoogleApiClient;
@@ -64,9 +60,13 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 
+import androidx.lifecycle.ViewModelProviders;
 import se.simonekdahl.mymaps.bottomsheet.MapObjectBottomSheetDialogFragment;
 import se.simonekdahl.mymaps.dao.MapObject;
+import se.simonekdahl.mymaps.dao.MarkerObject;
 import se.simonekdahl.mymaps.utils.PermissionUtils;
+
+import static se.simonekdahl.mymaps.utils.MapImageUtils.loadImageFromStorage;
 
 public class MainActivity extends ParentActivity
         implements NavigationView.OnNavigationItemSelectedListener, LocationListener, OnMapReadyCallback, GoogleMap.OnMapClickListener, GoogleMap.OnMapLongClickListener, GoogleMap.OnMarkerClickListener {
@@ -95,6 +95,8 @@ public class MainActivity extends ParentActivity
     TextView loadingIndicator;
 
     private boolean mPermissionDenied = false;
+
+    MarkerViewModel model;
 
     private static final long MIN_TIME = 400;
     private static final float MIN_DISTANCE = 1000;
@@ -148,6 +150,9 @@ public class MainActivity extends ParentActivity
             SupportMapFragment mapFragment =
                     (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map);
             mapFragment.getMapAsync(this);
+
+            model = ViewModelProviders.of(this).get(MarkerViewModel.class);
+
         }
     }
 
@@ -237,21 +242,15 @@ public class MainActivity extends ParentActivity
         AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(this);
         alertDialogBuilder.setMessage(R.string.Alert_message_GPS_is_disabled)
                 .setPositiveButton(R.string.Go_to_gps_settings_text,
-                        new DialogInterface.OnClickListener() {
-                            public void onClick(DialogInterface dialog, int id) {
-                                //Set the dialogshown to true. user has seen this alert
-                                dialogShown = true;
-                                Intent intent = new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS);
-                                startActivityForResult(intent, GPS_ENABLE_REQUEST);
-                            }
+                        (dialog, id) -> {
+                            //Set the dialogshown to true. user has seen this alert
+                            dialogShown = true;
+                            Intent intent = new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS);
+                            startActivityForResult(intent, GPS_ENABLE_REQUEST);
                         });
 
         alertDialogBuilder.setNegativeButton(R.string.cancel,
-                new DialogInterface.OnClickListener() {
-                    public void onClick(DialogInterface dialog, int id) {
-                        dialog.cancel();
-                    }
-                });
+                (dialog, id) -> dialog.cancel());
         AlertDialog alert = alertDialogBuilder.create();
         alert.show();
     }
@@ -426,9 +425,7 @@ public class MainActivity extends ParentActivity
 
     private void loadGroundOverlayData() {
 
-        getDaoSession().getMapObjectDao().queryBuilder().list();
-
-        mapObjects = getDaoSession().getMapObjectDao().queryBuilder().list();
+        mapObjects = ((App)getApplication()).getDaoSession().getMapObjectDao().queryBuilder().list();
 
         //clear the map from old overlays.
         mMap.clear();
@@ -452,7 +449,7 @@ public class MainActivity extends ParentActivity
 
                 gO.position(latLng, (float) m.getSize());
                 gO.bearing((float) m.getRotation());
-                Bitmap bM = loadImageFromStorage(m.getFilePath(), m.getId());
+                Bitmap bM = loadImageFromStorage(m.getFilePath(), String.valueOf(m.getId()));
                 gO.image(BitmapDescriptorFactory.fromBitmap(bM));
 
                 mMap.addGroundOverlay(gO);
@@ -490,12 +487,12 @@ public class MainActivity extends ParentActivity
         // Showing InfoWindow on the GoogleMap
         marker.showInfoWindow();
 
-        showMarker(marker);
+        showMarker(marker, null);
 
 
     }
 
-    private void showMarker(final Marker marker) {
+    private void showMarker(final Marker marker, final MarkerObject mo) {
         CameraPosition cameraPosition = new CameraPosition.Builder()
                 .target(marker.getPosition())
                 .zoom(17).build();
@@ -503,7 +500,17 @@ public class MainActivity extends ParentActivity
         mMap.animateCamera(CameraUpdateFactory.newCameraPosition(cameraPosition), new GoogleMap.CancelableCallback() {
             @Override
             public void onFinish() {
-                MapObjectBottomSheetDialogFragment f = MapObjectBottomSheetDialogFragment.newInstance(marker);
+
+                MapObjectBottomSheetDialogFragment f;
+
+                if(mo != null){
+                    f = MapObjectBottomSheetDialogFragment.newInstance(mo);
+                } else {
+                    f = MapObjectBottomSheetDialogFragment.newInstance(marker);
+                }
+
+
+                f.setOnSaveListener(() -> model.getLatest());
                 f.show(getSupportFragmentManager(), "add_photo_dialog_fragment");
             }
 
@@ -525,6 +532,12 @@ public class MainActivity extends ParentActivity
         mMap.setOnMapClickListener(this);
         mMap.setOnMapLongClickListener(this);
         mMap.setOnMarkerClickListener(this);
+
+        model.getMarkerObjectList().observe(this, markerObjectList -> {
+            for(MarkerObject marker : markerObjectList){
+                mMap.addMarker(marker.getMarkerOptions());
+            }
+        });
 
         enableMyLocation();
 
@@ -661,7 +674,9 @@ public class MainActivity extends ParentActivity
     @Override
     public boolean onMarkerClick(Marker marker) {
 
-        showMarker(marker);
+        MarkerObject mo = model.getMarkerObjectFromMarker(marker);
+
+        showMarker(marker, mo);
 
         return true;
 

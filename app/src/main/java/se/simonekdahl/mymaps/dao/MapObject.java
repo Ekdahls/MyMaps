@@ -31,30 +31,18 @@ public class MapObject implements Parcelable, Comparable<MapObject> {
 
     private String bitmapName;
     private String filePath;
-    private double tiePointOne;
-    private double tiePointTwo;
+    private Double tiePointOne;
+    private Double tiePointTwo;
     private double rotation;
     private double size;
 
 
     private String description;
 
-    /**
-     * Used to resolve relations
-     */
-    @Generated(hash = 2040040024)
-    private transient DaoSession daoSession;
 
-    /**
-     * Used for active entity operations.
-     */
-    @Generated(hash = 48110761)
-    private transient MapObjectDao myDao;
-
-
-    @Generated(hash = 755981821)
+    @Generated(hash = 657912622)
     public MapObject(Long id, @NotNull String name, String bitmapName, String filePath,
-                     double tiePointOne, double tiePointTwo, double rotation, double size, String description) {
+                     Double tiePointOne, Double tiePointTwo, double rotation, double size, String description) {
         this.id = id;
         this.name = name;
         this.bitmapName = bitmapName;
@@ -66,11 +54,17 @@ public class MapObject implements Parcelable, Comparable<MapObject> {
         this.description = description;
     }
 
-
     @Generated(hash = 705302497)
     public MapObject() {
     }
 
+    /** Used to resolve relations */
+    @Generated(hash = 2040040024)
+    private transient DaoSession daoSession;
+
+    /** Used for active entity operations. */
+    @Generated(hash = 48110761)
+    private transient MapObjectDao myDao;
 
     public Long getId() {
         return this.id;
@@ -112,22 +106,22 @@ public class MapObject implements Parcelable, Comparable<MapObject> {
     }
 
 
-    public double getTiePointOne() {
+    public Double getTiePointOne() {
         return this.tiePointOne;
     }
 
 
-    public void setTiePointOne(double tiePointOne) {
+    public void setTiePointOne(Double tiePointOne) {
         this.tiePointOne = tiePointOne;
     }
 
 
-    public double getTiePointTwo() {
+    public Double getTiePointTwo() {
         return this.tiePointTwo;
     }
 
 
-    public void setTiePointTwo(double tiePointTwo) {
+    public void setTiePointTwo(Double tiePointTwo) {
         this.tiePointTwo = tiePointTwo;
     }
 

@@ -3,18 +3,14 @@ package se.simonekdahl.mymaps;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.media.ThumbnailUtils;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
-import android.widget.ImageView;
-import android.widget.TextView;
+import android.widget.ListView;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
+import java.util.ArrayList;
 import java.util.List;
 
 import se.simonekdahl.mymaps.dao.MapObject;
@@ -28,14 +24,16 @@ import static androidx.core.content.ContextCompat.startActivity;
  */
 public class CustomAdapter extends BaseAdapter {
 
+    private final MapObjectListItemView.OnCheckedChangedListener onCheckedChangedListener;
     private List<MapObject> items;
     private Context context;
     private LayoutInflater inflater;
 
-    public CustomAdapter(Context _context, List<MapObject> _items){
+    public CustomAdapter(Context _context, List<MapObject> _items, MapObjectListItemView.OnCheckedChangedListener onCheckedChangedListener){
         inflater = LayoutInflater.from(_context);
         this.items = _items;
         this.context = _context;
+        this.onCheckedChangedListener = onCheckedChangedListener;
 
     }
 
@@ -58,35 +56,41 @@ public class CustomAdapter extends BaseAdapter {
     public View getView(int position, View convertView, ViewGroup parent) {
 
         MapObject map = items.get(position);
-        View view = convertView;
 
-        if(view == null)
-            view = inflater.inflate(R.layout.map_item, null);
+        if(convertView == null)
+            convertView = new MapObjectListItemView(context);
 
-        TextView name = view.findViewById(R.id.tv_map_name);
-        TextView description = view.findViewById(R.id.tv_map_desc);
-        ImageView photo = view.findViewById(R.id.list_image);
-        Bitmap mapImage = loadImageFromStorage(map.getFilePath(), map.getId());
 
-        if(mapImage!=null) {
-            mapImage = cropCenter(mapImage);
-        }
+        MapObjectListItemView itemView = (MapObjectListItemView) convertView;
+        itemView.setMapObjectListItemView(map);
 
-        name.setText(map.getName());
-        description.setText(map.getDescription());
-        photo.setImageBitmap(mapImage);
 
-        view.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Intent intent = new Intent(context, MapDetails.class);
-                intent.putExtra("MAP", map);
-                startActivity(context, intent, null);
-            }
+        itemView.setOnClickListener(v -> {
+            Intent intent = new Intent(context, MapDetails.class);
+            intent.putExtra("MAP", map);
+            startActivity(context, intent, null);
         });
 
 
-        return view;
+        itemView.setOnCheckedChangedListener(count -> {
+            final ListView listView = (ListView)parent;
+            int sum = 0;
+
+            ArrayList<MapObject> checkedItems = new ArrayList<>();
+
+            for(int i = 0; i < listView.getChildCount(); i++){
+                MapObjectListItemView v = (MapObjectListItemView) listView.getChildAt(i);
+                if(v.isChecked()) checkedItems.add(v.getMapObject());
+            }
+
+            onCheckedChangedListener.onCheckedChanged(checkedItems);
+        });
+
+
+
+
+
+        return convertView;
     }
 
     //Function to make all mapimages square
@@ -94,24 +98,6 @@ public class CustomAdapter extends BaseAdapter {
 
             int dimension = Math.min(bmp.getWidth(), bmp.getHeight());
             return ThumbnailUtils.extractThumbnail(bmp, dimension, dimension);
-    }
-
-
-    //Function to load all mapimages from internal storage
-    public Bitmap loadImageFromStorage(String path, long fileName)
-    {
-        Bitmap b = null;
-
-        try {
-            File f=new File(path, String.valueOf(fileName) + ".png" );
-            b = BitmapFactory.decodeStream(new FileInputStream(f));
-        }
-        catch (FileNotFoundException e)
-        {
-            e.printStackTrace();
-        }
-
-        return b;
     }
 
 }

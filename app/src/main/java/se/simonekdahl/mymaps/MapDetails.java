@@ -8,6 +8,7 @@ import android.graphics.BitmapFactory;
 import android.os.Bundle;
 
 import androidx.appcompat.widget.Toolbar;
+import se.simonekdahl.mymaps.dao.DaoSession;
 import se.simonekdahl.mymaps.dao.MapObject;
 import se.simonekdahl.mymaps.dao.MapObjectDao;
 
@@ -22,9 +23,14 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.squareup.picasso.Picasso;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+
+import static se.simonekdahl.mymaps.utils.MapImageUtils.getImageFile;
+import static se.simonekdahl.mymaps.utils.MapImageUtils.loadImageFromStorage;
 
 /**
  * Created by Simon on 16-03-23.
@@ -42,7 +48,8 @@ public class MapDetails extends ParentActivity {
 
     private MapObjectDao getMapObjectDao(){
         if(mapObjectDao == null){
-            mapObjectDao = getDaoSession().getMapObjectDao();
+            DaoSession daoSession = ((App)getApplication()).getDaoSession();
+            mapObjectDao = daoSession.getMapObjectDao();
         }
 
         return mapObjectDao;
@@ -68,7 +75,11 @@ public class MapDetails extends ParentActivity {
         Log.d(TAG, "onCreate: extras == ");
 
         ImageView mMapimage = findViewById(R.id.map_image_view_in_details);
-        mMapimage.setImageBitmap(loadImageFromStorage(map.getFilePath(), map.getBitmapName()));
+
+        Picasso.get()
+                .load(getImageFile(map.getFilePath(), map.getBitmapName()))
+                .fit()
+                .into(mMapimage);
 
         mMapname = findViewById(R.id.textView_insert_mapname);
         mMapname.setText(map.getName());
@@ -82,20 +93,17 @@ public class MapDetails extends ParentActivity {
 
         Button btn_goto = findViewById(R.id.button_go_to_map);
         assert btn_goto != null;
-        btn_goto.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
+        btn_goto.setOnClickListener(v -> {
 
-                if (extras.getDouble("MAP_TIEPOINT_ONE", 0) > 0 && extras.getDouble("MAP_TIEPOINT_TWO") > 0) {
-                    Intent i = new Intent(MapDetails.this, MainActivity.class);
+            if (extras.getDouble("MAP_TIEPOINT_ONE", 0) > 0 && extras.getDouble("MAP_TIEPOINT_TWO") > 0) {
+                Intent i = new Intent(MapDetails.this, MainActivity.class);
 
-                    i.putExtra("MAP_LATITUDE", extras.getDouble("MAP_TIEPOINT_ONE", 0));
-                    i.putExtra("MAP_LONGITUDE", extras.getDouble("MAP_TIEPOINT_TWO", 0));
-                    //No results needed, just start activity
-                    startActivity(i);
-                }
-
+                i.putExtra("MAP_LATITUDE", extras.getDouble("MAP_TIEPOINT_ONE", 0));
+                i.putExtra("MAP_LONGITUDE", extras.getDouble("MAP_TIEPOINT_TWO", 0));
+                //No results needed, just start activity
+                startActivity(i);
             }
+
         });
 
         Button deleteMapButton = findViewById(R.id.btn_delete_map_object);
@@ -113,6 +121,9 @@ public class MapDetails extends ParentActivity {
                             public void onClick(DialogInterface dialog, int whichButton) {
                                 Toast.makeText(getBaseContext(), R.string.Map_deleted, Toast.LENGTH_SHORT).show();
                                 getMapObjectDao().delete(map);
+
+
+
                                 finish();
                             }
                         })
@@ -122,7 +133,7 @@ public class MapDetails extends ParentActivity {
         });
 
 
-        if (extras.getDouble("MAP_TIEPOINT_ONE", 0) == 0 || extras.getDouble("MAP_TIEPOINT_TWO") == 0) {
+        if (map.getTiePointOne() == null || map.getTiePointTwo() == null) {
 
             //If the map has no coordinates, user can't go the that map
             btn_goto.setText(R.string.map_button_text_no_coord);
@@ -140,19 +151,6 @@ public class MapDetails extends ParentActivity {
         inflater.inflate(R.menu.menu_save, menu);
 
         return true;
-    }
-
-    public Bitmap loadImageFromStorage(String path, String fileName) {
-        Bitmap b = null;
-
-        try {
-            File f = new File(path, fileName + ".png");
-            b = BitmapFactory.decodeStream(new FileInputStream(f));
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-        }
-
-        return b;
     }
 
     /*

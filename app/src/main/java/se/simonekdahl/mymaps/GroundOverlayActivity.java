@@ -44,6 +44,8 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import static se.simonekdahl.mymaps.utils.MapImageUtils.loadImageFromStorage;
+
 /**
  * This shows how to add a ground overlay to a map.
  */
@@ -88,8 +90,7 @@ public class GroundOverlayActivity extends ParentActivity
         long mapId = getIntent().getLongExtra("MAP_IMAGE_ID", 0);
         String filePath = getIntent().getStringExtra("MAP_IMAGE_FILE_PATH");
 
-
-        mapFile = loadImageFromStorage(filePath, mapId);
+        mapFile = loadImageFromStorage(filePath, String.valueOf(mapId));
         mapOverlay = new OverlayObject(mapFile);
 
         setContentView(R.layout.activity_add_overlay);
@@ -140,6 +141,11 @@ public class GroundOverlayActivity extends ParentActivity
 
 
         Toast.makeText(this, R.string.Toast_groundoverlayactivity_place_image_1of2, Toast.LENGTH_SHORT).show();
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
     }
 
     @Override
@@ -257,7 +263,7 @@ public class GroundOverlayActivity extends ParentActivity
 
         }else{
 
-            MapObjectDao mapObjectDao = getDaoSession().getMapObjectDao();
+            MapObjectDao mapObjectDao = ((App)getApplication()).getDaoSession().getMapObjectDao();
 
             //User saved overlay, update database accordingly
             long mapId = getIntent().getLongExtra("MAP_IMAGE_ID", 0);
@@ -271,7 +277,6 @@ public class GroundOverlayActivity extends ParentActivity
                 map.setSize(mapOverlay.getWidth());
                 map.setRotation(mapOverlay.getBearing());
 
-
                 mapObjectDao.update(map);
             }else{
 
@@ -280,6 +285,9 @@ public class GroundOverlayActivity extends ParentActivity
 
             //Finish activity.
             setResult(Activity.RESULT_OK);
+
+
+
             finish();
         }
     }
@@ -331,6 +339,12 @@ public class GroundOverlayActivity extends ParentActivity
         return true;
     }
 
+    @Override
+    public void onBackPressed() {
+
+
+        super.onBackPressed();
+    }
 
     //Options to select map-type
     @Override

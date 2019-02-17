@@ -1,49 +1,27 @@
 package se.simonekdahl.mymaps;
 
 import android.content.Intent;
-import android.database.Cursor;
-import android.database.MatrixCursor;
 import android.os.Bundle;
-import android.util.Log;
-import android.view.View;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
+import android.widget.AbsListView;
 import android.widget.ListView;
 
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
-import java.util.List;
+import java.util.ArrayList;
 
 import androidx.appcompat.widget.Toolbar;
 import androidx.lifecycle.ViewModelProviders;
-import androidx.loader.content.Loader;
-import androidx.recyclerview.widget.RecyclerView;
 import se.simonekdahl.mymaps.dao.MapObject;
-import se.simonekdahl.mymaps.dao.MapObjectDao;
-
-
 
 public class MapList extends ParentActivity {
 
-    private static final String TAG = "MapList";
-    List<MapObject> mapObjects;
     ListView lv;
-
-    private MapObjectDao mapObjectDao;
-
-    private RecyclerView mRecyclerView;
-
-    public final int offset = 30;
-    private int page = 0;
-    private boolean loadingMore = false;
-
     MapListViewModel model;
-
-    private MapObjectDao getMapObjectDao(){
-        if(mapObjectDao == null){
-            mapObjectDao = getDaoSession().getMapObjectDao();
-        }
-
-        return mapObjectDao;
-    }
+    Menu menu;
+    private ArrayList<MapObject> checkedItems;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -58,58 +36,55 @@ public class MapList extends ParentActivity {
         FloatingActionButton fab = findViewById(R.id.fab);
 
         assert fab != null;
-        fab.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-
-                // Intent i = new Intent(MainActivity.this, GroundOverlayActivity.class);
-                Intent i = new Intent(MapList.this, ChoseFileActivity.class);
-                startActivityForResult(i, 1);
-
-                    /*Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
-                            .setAction("Action", null).show();*/
-            }
+        fab.setOnClickListener(view -> {
+            Intent i = new Intent(MapList.this, ChoseFileActivity.class);
+            startActivityForResult(i, 1);
         });
 
         lv = findViewById(R.id.lv_maps_list);
 
+        lv.setChoiceMode(AbsListView.CHOICE_MODE_NONE);
+
         model = ViewModelProviders.of(this).get(MapListViewModel.class);
         model.getMapObjectList().observe(this, mapObjectList -> {
 
-            CustomAdapter adapter = new CustomAdapter(this, mapObjectList);
+            CustomAdapter adapter = new CustomAdapter(this, mapObjectList, (mapObjects) -> {
+                MenuItem deleteItem = menu.findItem(R.id.delete);
+                deleteItem.setVisible(mapObjects.size() > 0);
+                this.checkedItems = mapObjects;
+            });
             lv.setAdapter(adapter);
 
         });
-
     }
 
     @Override
     protected void onResume() {
         super.onResume();
         model.getLatest();
-        //loadContactData();
     }
 
-    private void loadContactData(){
-        // Code for loading contact list in ListView
-        // Reading all contacts
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
 
-        mapObjects = getMapObjectDao().loadAll();
+        // Inflate the menu; this adds items to the action bar if it is present.
+        MenuInflater inflater = getMenuInflater();
+        inflater.inflate(R.menu.menu_map_list, menu);
 
-        // Initialize Custom Adapter
-        CustomAdapter adapter = new CustomAdapter(this, mapObjects);
+        this.menu = menu;
 
-        // Set Adapter to ListView
-        lv.setAdapter(adapter);
+        return true;
+    }
 
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        int id = item.getItemId();
 
-        for(MapObject m : mapObjects){
-            String record = "ID=" + m.getId() + " | Name=" + m.getName() + " | " + m.getDescription() +
-                    " Filepath = " + m.getFilePath() + " Filnamet är " + m.getBitmapName();
-
-            Log.d(TAG, "RECORDDATA =__________ : " + record);
+        if(id == R.id.delete){
+            ((App)getApplication()).getDaoSession().getMapObjectDao().deleteInTx(checkedItems);
+            model.getLatest();
         }
 
+        return super.onOptionsItemSelected(item);
     }
-
 }
