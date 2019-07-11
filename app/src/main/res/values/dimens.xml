@@ -14,5 +14,8 @@
     <dimen name="map_horizontal_margin">6dp</dimen>
     <dimen name="map_vertical_margin">6dp</dimen>
 
+    <dimen name="bottom_sheet_corner_radius">16dp</dimen>
+    <dimen name="bottom_sheet_top_padding">10dp</dimen>
+
 
 </resources>

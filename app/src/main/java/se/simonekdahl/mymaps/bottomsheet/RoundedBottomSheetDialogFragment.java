@@ -3,11 +3,6 @@ package se.simonekdahl.mymaps.bottomsheet;
 import android.annotation.SuppressLint;
 import android.app.Dialog;
 import android.os.Bundle;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-
-import com.google.android.gms.maps.model.Marker;
-import com.google.android.material.bottomsheet.BottomSheetDialogFragment;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -15,14 +10,32 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.coordinatorlayout.widget.CoordinatorLayout;
 import androidx.lifecycle.ViewModelProviders;
-import se.simonekdahl.mymaps.App;
+
+import com.google.android.gms.maps.model.Marker;
+import com.google.android.material.bottomsheet.BottomSheetDialog;
+import com.google.android.material.bottomsheet.BottomSheetDialogFragment;
+
 import se.simonekdahl.mymaps.MarkerViewModel;
 import se.simonekdahl.mymaps.R;
 import se.simonekdahl.mymaps.dao.MarkerObject;
 
-public class MapObjectBottomSheetDialogFragment extends BottomSheetDialogFragment {
+public class RoundedBottomSheetDialogFragment extends BottomSheetDialogFragment {
+
+
+    @Override
+    public int getTheme() {
+        return R.style.BottomSheetDialogTheme;
+    }
+
+    @Override
+    public Dialog onCreateDialog(Bundle savedInstanceState) {
+        return new BottomSheetDialog(requireContext(), getTheme());
+    }
+
 
 
     private EditText title;
@@ -31,8 +44,8 @@ public class MapObjectBottomSheetDialogFragment extends BottomSheetDialogFragmen
     private Button saveButton;
     private Button deleteButton;
 
-    public static MapObjectBottomSheetDialogFragment newInstance(MarkerObject mo) {
-        MapObjectBottomSheetDialogFragment fragment = new MapObjectBottomSheetDialogFragment();
+    public static RoundedBottomSheetDialogFragment newInstance(MarkerObject mo) {
+        RoundedBottomSheetDialogFragment fragment = new RoundedBottomSheetDialogFragment();
 
         Bundle args = new Bundle();
 
@@ -46,9 +59,9 @@ public class MapObjectBottomSheetDialogFragment extends BottomSheetDialogFragmen
         return fragment;
     }
 
-    public static MapObjectBottomSheetDialogFragment newInstance(Marker marker) {
+    public static RoundedBottomSheetDialogFragment newInstance(Marker marker) {
 
-        MapObjectBottomSheetDialogFragment fragment = new MapObjectBottomSheetDialogFragment();
+        RoundedBottomSheetDialogFragment fragment = new RoundedBottomSheetDialogFragment();
 
         Bundle args = new Bundle();
 
@@ -66,11 +79,9 @@ public class MapObjectBottomSheetDialogFragment extends BottomSheetDialogFragmen
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-       // setStyle(BottomSheetDialogFragment.STYLE_NORMAL, R.style.CustomBottomSheetDialogTheme);
+        // setStyle(BottomSheetDialogFragment.STYLE_NORMAL, R.style.CustomBottomSheetDialogTheme);
 
     }
-
-
 
     @SuppressLint("RestrictedApi")
     @Override
@@ -126,7 +137,7 @@ public class MapObjectBottomSheetDialogFragment extends BottomSheetDialogFragmen
             m.setLatitude(lat);
             m.setLongitude(longitude);
 
-           model.addMarkerObject(m);
+            model.addMarkerObject(m);
             this.dismiss();
         });
 
@@ -139,5 +150,8 @@ public class MapObjectBottomSheetDialogFragment extends BottomSheetDialogFragmen
 
         return view;
     }
+
+
+
 
 }

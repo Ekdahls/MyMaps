@@ -4,17 +4,18 @@
     android:id="@+id/bottom_sheet"
     android:layout_width="match_parent"
     android:layout_height="340dp"
-    android:background="@android:color/transparent"
+    android:background="@color/white"
     android:orientation="vertical"
+    android:paddingStart="10dp"
+    android:paddingEnd="10dp"
     app:behavior_hideable="true"
-    app:behavior_peekHeight="100dp"
-    app:layout_behavior="se.simonekdahl.mymaps.bottomsheet.HiddenBottomSheetBehavior">
+    app:behavior_peekHeight="100dp">
 
 
     <TableLayout
         android:layout_width="match_parent"
         android:layout_height="100dp"
-        android:background="#7A378828"
+        android:background="@color/white"
         android:orientation="vertical"
         android:paddingBottom="20dp">
         <TableRow

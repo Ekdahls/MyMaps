@@ -3,6 +3,8 @@ package se.simonekdahl.mymaps;
 import android.Manifest;
 import android.app.AlertDialog;
 import android.app.Dialog;
+import android.app.SearchManager;
+import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
@@ -64,6 +66,7 @@ import java.util.List;
 import androidx.lifecycle.Observer;
 import androidx.lifecycle.ViewModelProviders;
 import se.simonekdahl.mymaps.bottomsheet.MapObjectBottomSheetDialogFragment;
+import se.simonekdahl.mymaps.bottomsheet.RoundedBottomSheetDialogFragment;
 import se.simonekdahl.mymaps.dao.MapObject;
 import se.simonekdahl.mymaps.dao.MarkerObject;
 import se.simonekdahl.mymaps.utils.PermissionUtils;
@@ -179,9 +182,15 @@ public class MainActivity extends ParentActivity
         inflater.inflate(R.menu.menu_main, menu);
 
         final MenuItem searchItem = menu.findItem(R.id.search);
+        SearchManager searchManager = (SearchManager) getSystemService(Context.SEARCH_SERVICE);
+
         final SearchView searchView = (SearchView) searchItem.getActionView();
         searchView.setQueryHint(getString(R.string.search_for_hint));
 
+        searchView.setSearchableInfo(searchManager.getSearchableInfo(getComponentName()));
+        searchView.setIconifiedByDefault(false); // Do not iconify the widget; expand it by default
+
+/*
         searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
             @Override
             public boolean onQueryTextSubmit(String s) {
@@ -202,7 +211,7 @@ public class MainActivity extends ParentActivity
                 return false;
             }
         });
-
+*/
         return true;
     }
 
@@ -504,12 +513,12 @@ public class MainActivity extends ParentActivity
             @Override
             public void onFinish() {
 
-                MapObjectBottomSheetDialogFragment f;
+                RoundedBottomSheetDialogFragment f;
 
                 if(mo != null){
-                    f = MapObjectBottomSheetDialogFragment.newInstance(mo);
+                    f = RoundedBottomSheetDialogFragment.newInstance(mo);
                 } else {
-                    f = MapObjectBottomSheetDialogFragment.newInstance(marker);
+                    f = RoundedBottomSheetDialogFragment.newInstance(marker);
                 }
 
                 f.show(getSupportFragmentManager(), "add_photo_dialog_fragment");
