@@ -78,6 +78,9 @@ public class GroundOverlayActivity extends ParentActivity
     private SeekBar mTransparencyBar, mSizeBar, mRotationBar;
     private Button mPlaceMapBtn;
 
+    private float currentRotation;
+    private float currentOpacity;
+
     private static final String TAG = "GroundOverlayActivity";
 
     GoogleMap mMap;
@@ -108,6 +111,7 @@ public class GroundOverlayActivity extends ParentActivity
         assert mTransparencyBar != null;
         mTransparencyBar.setMax(TRANSPARENCY_MAX);
         mTransparencyBar.setProgress(TRANSPARENCY_MAX / 2);
+        currentOpacity = TRANSPARENCY_MAX / 2.0f;
         imgPicture.setAlpha(0.5f);
 
         mSizeBar = findViewById(R.id.sizeSeekBar);
@@ -119,6 +123,7 @@ public class GroundOverlayActivity extends ParentActivity
         assert mRotationBar != null;
         mRotationBar.setMax(ROTAION_MAX);
         mRotationBar.setProgress(0);
+        currentRotation = 0;
 
         mRotationBar.setOnSeekBarChangeListener(this);
         mSizeBar.setOnSeekBarChangeListener(this);
@@ -191,6 +196,7 @@ public class GroundOverlayActivity extends ParentActivity
     public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
 
             if(seekBar == mTransparencyBar) {
+                currentOpacity = progress;
                 if (mapOverlay.getGroundOverlay() != null) {
                     mapOverlay.getGroundOverlay().setTransparency((100 - (float) progress) / OVERLAY_TRANSPARENCY_MAX);
                 } else {
@@ -198,6 +204,7 @@ public class GroundOverlayActivity extends ParentActivity
                 }
             }
             if (seekBar == mRotationBar) {
+                currentRotation = progress;
                 if (mapOverlay.getGroundOverlay() != null) {
                     mapOverlay.getGroundOverlay().setBearing((float) progress);
                 }else{
@@ -251,7 +258,8 @@ public class GroundOverlayActivity extends ParentActivity
             mRotationBar.setMax(OVERLAY_ROTATION_MAX);
           //  mSizeBar.setMax(OVERLAY_SIZE_MAX);
             mTransparencyBar.setMax(OVERLAY_TRANSPARENCY_MAX);
-            mTransparencyBar.setProgress(OVERLAY_TRANSPARENCY_MAX);
+            int newOpacityProgress = (int) ((currentOpacity / 250) * 100);
+            mTransparencyBar.setProgress(newOpacityProgress);
 
             double sizeMax = mapOverlay.setGroundOverlay(mMap);
             mapOverlay.fixGroundOverlay(mMap);
@@ -260,6 +268,9 @@ public class GroundOverlayActivity extends ParentActivity
 
             mPlaceMapBtn.setText(R.string.save_image);
             Toast.makeText(this, R.string.toast_groundoverlayactivity_place_map2of2, Toast.LENGTH_SHORT).show();
+
+            mapOverlay.getGroundOverlay().setBearing(currentRotation);
+            mapOverlay.getGroundOverlay().setTransparency((float)(100 - newOpacityProgress)/OVERLAY_TRANSPARENCY_MAX);
 
         }else{
 
@@ -310,40 +321,23 @@ public class GroundOverlayActivity extends ParentActivity
         // Inflate the menu; this adds items to the action bar if it is present.
         MenuInflater inflater = getMenuInflater();
         inflater.inflate(R.menu.menu_main, menu);
-
-        final MenuItem searchItem = menu.findItem(R.id.search);
-        final SearchView searchView = (SearchView) searchItem.getActionView();
-        searchView.setQueryHint("Search For");
-
-        searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
-            @Override
-            public boolean onQueryTextSubmit(String s) {
-
-                //Collapse the searchfield
-                searchItem.collapseActionView();
-                // Send the entered string to geolocate
-                try {
-                    geoLocateAppBar(searchView, s);
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-                return true;
-            }
-
-            @Override
-            public boolean onQueryTextChange(String s) {
-                return false;
-            }
-        });
-
         return true;
     }
 
     @Override
     public void onBackPressed() {
 
-
+        deleteCurrentMap();
         super.onBackPressed();
+    }
+
+    private void deleteCurrentMap(){
+        MapObjectDao mapObjectDao = ((App)getApplication()).getDaoSession().getMapObjectDao();
+
+        //User saved overlay, update database accordingly
+        long mapId = getIntent().getLongExtra("MAP_IMAGE_ID", 0);
+
+        mapObjectDao.deleteByKey(mapId);
     }
 
     //Options to select map-type
@@ -367,6 +361,9 @@ public class GroundOverlayActivity extends ParentActivity
                 break;
             case R.id.mapTypeHybrid:
                 mMap.setMapType(GoogleMap.MAP_TYPE_HYBRID);
+                break;
+            case R.id.home:
+                onBackPressed();
                 break;
         }
 
