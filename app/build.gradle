@@ -12,10 +12,15 @@ android {
         versionCode 1
         versionName "1.0"
         vectorDrawables.useSupportLibrary = true
+
+
+        resValue "string" , "MAP_API_KEY" ,  "\"$MAP_API_KEY\""
+        resValue "string" , "PLACES_API_KEY" ,  "\"$PLACES_API_KEY\""
+
     }
     buildTypes {
         release {
-            minifyEnabled false
+            minifyEnabled true
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
     }
@@ -23,6 +28,9 @@ android {
         sourceCompatibility = JavaVersion.VERSION_1_8
         targetCompatibility = JavaVersion.VERSION_1_8
     }
+
+
+
 }
 
 dependencies {

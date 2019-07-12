@@ -33,14 +33,6 @@ public class MapList extends ParentActivity {
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
         getSupportActionBar().setDisplayShowHomeEnabled(true);
 
-        FloatingActionButton fab = findViewById(R.id.fab);
-
-        assert fab != null;
-        fab.setOnClickListener(view -> {
-            Intent i = new Intent(MapList.this, ChoseFileActivity.class);
-            startActivityForResult(i, 1);
-        });
-
         lv = findViewById(R.id.lv_maps_list);
 
         lv.setChoiceMode(AbsListView.CHOICE_MODE_NONE);
