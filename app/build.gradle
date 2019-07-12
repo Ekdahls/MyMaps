@@ -31,8 +31,10 @@ dependencies {
     testImplementation 'junit:junit:4.12'
     implementation 'androidx.appcompat:appcompat:1.1.0-rc01'
     implementation 'com.google.android.material:material:1.1.0-alpha07'
-    implementation 'com.google.android.gms:play-services:12.0.1'
+
     implementation 'org.greenrobot:greendao:3.2.2'
+
+    implementation 'com.google.android.libraries.places:places:1.1.0'
 
 
     //for lifecycle and LiveData and ViewModel

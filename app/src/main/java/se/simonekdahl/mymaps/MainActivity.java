@@ -17,11 +17,16 @@ import android.location.LocationManager;
 import android.os.PersistableBundle;
 import android.provider.Settings;
 
+import com.google.android.gms.common.api.Status;
 import com.google.android.gms.maps.model.CameraPosition;
+import com.google.android.libraries.places.api.model.Place;
+import com.google.android.libraries.places.widget.AutocompleteSupportFragment;
+import com.google.android.libraries.places.widget.listener.PlaceSelectionListener;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.navigation.NavigationView;
 
 import androidx.annotation.NonNull;
+import androidx.appcompat.widget.AppCompatEditText;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.core.view.GravityCompat;
@@ -41,6 +46,7 @@ import android.view.View;
 import androidx.appcompat.widget.SearchView;
 
 import android.widget.LinearLayout;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -60,12 +66,11 @@ import com.google.android.gms.maps.model.MarkerOptions;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 
-import androidx.lifecycle.Observer;
 import androidx.lifecycle.ViewModelProviders;
-import se.simonekdahl.mymaps.bottomsheet.MapObjectBottomSheetDialogFragment;
 import se.simonekdahl.mymaps.bottomsheet.RoundedBottomSheetDialogFragment;
 import se.simonekdahl.mymaps.dao.MapObject;
 import se.simonekdahl.mymaps.dao.MarkerObject;
@@ -74,7 +79,7 @@ import se.simonekdahl.mymaps.utils.PermissionUtils;
 import static se.simonekdahl.mymaps.utils.MapImageUtils.loadImageFromStorage;
 
 public class MainActivity extends ParentActivity
-        implements NavigationView.OnNavigationItemSelectedListener, LocationListener, OnMapReadyCallback, GoogleMap.OnMapClickListener, GoogleMap.OnMapLongClickListener, GoogleMap.OnMarkerClickListener {
+        implements NavigationView.OnNavigationItemSelectedListener, LocationListener, OnMapReadyCallback, GoogleMap.OnMapClickListener, GoogleMap.OnMapLongClickListener, GoogleMap.OnMarkerClickListener, GoogleMap.OnMapLoadedCallback {
 
     private static final int LOCATION_PERMISSION_REQUEST_CODE = 1;
     private static final int ERROR_DIALOG_REQUEST = 9001;
@@ -97,7 +102,7 @@ public class MainActivity extends ParentActivity
 
     private HashMap<Marker, MapObject> mapMarkerMap;
 
-    TextView loadingIndicator;
+    LinearLayout loadingWrapper;
 
     private boolean mPermissionDenied = false;
 
@@ -181,14 +186,48 @@ public class MainActivity extends ParentActivity
         MenuInflater inflater = getMenuInflater();
         inflater.inflate(R.menu.menu_main, menu);
 
-        final MenuItem searchItem = menu.findItem(R.id.search);
-        SearchManager searchManager = (SearchManager) getSystemService(Context.SEARCH_SERVICE);
 
-        final SearchView searchView = (SearchView) searchItem.getActionView();
-        searchView.setQueryHint(getString(R.string.search_for_hint));
+        // Initialize the AutocompleteSupportFragment.
+        AutocompleteSupportFragment autocompleteFragment = (AutocompleteSupportFragment)
+                getSupportFragmentManager().findFragmentById(R.id.autocomplete_fragment);
 
-        searchView.setSearchableInfo(searchManager.getSearchableInfo(getComponentName()));
-        searchView.setIconifiedByDefault(false); // Do not iconify the widget; expand it by default
+
+        View poweredByGoogle = autocompleteFragment.getView().findViewById(R.id.places_autocomplete_powered_by_google);
+        if(poweredByGoogle != null){
+            poweredByGoogle.setVisibility(View.GONE);
+        }
+        // Specify the types of place data to return.
+        autocompleteFragment.setPlaceFields(Arrays.asList(Place.Field.ID, Place.Field.NAME, Place.Field.LAT_LNG));
+
+        // Set up a PlaceSelectionListener to handle the response.
+        autocompleteFragment.setOnPlaceSelectedListener(new PlaceSelectionListener() {
+            @Override
+            public void onPlaceSelected(Place place) {
+                // TODO: Get info about the selected place.
+                Log.i(TAG, "Place: " + place.getName() + ", " + place.getId());
+                CameraPosition cameraPosition = new CameraPosition.Builder()
+                        .target(place.getLatLng())
+                        .zoom(10).build();
+                //Zoom in and animate the camera.
+                mMap.animateCamera(CameraUpdateFactory.newCameraPosition(cameraPosition));
+            }
+
+            @Override
+            public void onError(Status status) {
+                // TODO: Handle the error.
+                Log.i(TAG, "An error occurred: " + status);
+            }
+        });
+
+
+        //final MenuItem searchItem = menu.findItem(R.id.search);
+        //SearchManager searchManager = (SearchManager) getSystemService(Context.SEARCH_SERVICE);
+
+        //final SearchView searchView = (SearchView) searchItem.getActionView();
+        //searchView.setQueryHint(getString(R.string.search_for_hint));
+
+        //searchView.setSearchableInfo(searchManager.getSearchableInfo(getComponentName()));
+        //searchView.setIconifiedByDefault(false); // Do not iconify the widget; expand it by default
 
 /*
         searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
@@ -443,7 +482,10 @@ public class MainActivity extends ParentActivity
         mMap.clear();
 
         for (MapObject m : mapObjects) {
-
+            if(m.getTiePointOne() == null || m.getTiePointTwo() == null){
+                //Something wrong with map object, skip
+                continue;
+            }
             //If the mapobject has two tiepoints, place a the groundoverlay on the map.
             if (m.getTiePointOne() > 0 && m.getTiePointTwo() > 0) {
                 //Add all groundoverlays to the map
@@ -542,6 +584,7 @@ public class MainActivity extends ParentActivity
         mMap.setOnMapClickListener(this);
         mMap.setOnMapLongClickListener(this);
         mMap.setOnMarkerClickListener(this);
+        mMap.setOnMapLoadedCallback(this);
 
 
         model.getMarkerObjectList().observe(this, markerObjectList -> {
@@ -639,14 +682,16 @@ public class MainActivity extends ParentActivity
             // Get LocationManager object from System Service LOCATION_SERVICE
             final LocationManager locationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
             // Create a criteria object to retrieve provider
-            Criteria criteria = new Criteria();
+            /*Criteria criteria = new Criteria();
 
             // Get the name of the best provider
             String provider = locationManager.getBestProvider(criteria, true);
 
             if(provider != null){
                 locationManager.requestLocationUpdates(provider, 0, 0, this);
-            }
+            }*/
+            locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, this);
+            locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 0, 0, this);
         }
     }
 
@@ -728,11 +773,31 @@ public class MainActivity extends ParentActivity
         CameraUpdate cameraUpdate = CameraUpdateFactory.newLatLngZoom(latLng, 15);
         mMap.animateCamera(cameraUpdate);
         locationManager.removeUpdates(this);
+        loadingWrapper = findViewById(R.id.loading_wrapper);
+        loadingWrapper.setVisibility(View.GONE);
 
-        loadingIndicator = findViewById(R.id.loading_indicator);
-        loadingIndicator.setVisibility(View.GONE);
 
     }
+
+    @Override
+    public void onMapLoaded() {
+        /* loadingWrapper = findViewById(R.id.loading_wrapper);
+        loadingWrapper.setVisibility(View.GONE);
+
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
+                != PackageManager.PERMISSION_GRANTED) {
+            // Permission to access the location is missing.
+            PermissionUtils.requestPermission(this, LOCATION_PERMISSION_REQUEST_CODE,
+                    Manifest.permission.ACCESS_FINE_LOCATION, true);
+        } else if (mMap != null) {
+            // Access to the location has been granted to the app.
+            mMap.setMyLocationEnabled(true);
+            initialZoom();
+        }*/
+    }
+
+
+
 
     @Override
     public void onStatusChanged(String provider, int status, Bundle extras) {
@@ -748,4 +813,6 @@ public class MainActivity extends ParentActivity
     public void onProviderDisabled(String provider) {
 
     }
+
+
 }
